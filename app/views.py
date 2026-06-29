@@ -7,7 +7,19 @@ from django.contrib import messages
 from django.utils import timezone
 
 def home(request):
-    return render(request, 'home.html')
+    from django.db.models import Count
+    context = {
+        'total_students': Etudiant.objects.count(),
+        'total_filieres': Filiere.objects.count(),
+        'total_evaluations': Evaluation.objects.count(),
+        'total_cotations': Cotation.objects.count(),
+        'filieres': Filiere.objects.annotate(
+            total_promotions=Count('promotion'),
+            total_cours=Count('cours')
+        ).all(),
+        'recent_evaluations': Evaluation.objects.select_related('cours', 'type_eval').order_by('-idevaluation')[:5],
+    }
+    return render(request, 'home.html', context)
 
 def register(request):
     if request.user.is_authenticated:

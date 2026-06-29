@@ -1,25 +1,20 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="text-center py-20">
+<!-- Hero Section -->
+{% if not user.is_authenticated %}
+<div class="text-center py-12">
     <h1 class="text-5xl font-extrabold text-blue-900 mb-6">Portail des Résultats Académiques</h1>
-    <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">Bienvenue sur la plateforme officielle de publication des résultats de l'ESforca. Connectez-vous pour consulter vos notes.</p>
+    <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">Bienvenue sur la plateforme officielle de publication des résultats de l'ESFORCA. Connectez-vous pour consulter vos notes.</p>
     
     <div class="flex justify-center space-x-4">
-        {% if not user.is_authenticated %}
-            <a href="{% url 'register' %}" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-green-700 shadow-lg transition">Créer un compte</a>
-            <a href="{% url 'login' %}" class="bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-blue-800 shadow-lg transition">Connexion</a>
-            <a href="/admin/" class="bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-800 shadow-lg transition">Administration</a>
-        {% else %}
-            <a href="{% url 'dashboard' %}" class="bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-blue-800 shadow-lg transition">Aller au Tableau de bord</a>
-            {% if user.is_staff %}
-                <a href="/admin/" class="bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-800 shadow-lg transition">Administration</a>
-            {% endif %}
-        {% endif %}
+        <a href="{% url 'register' %}" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-green-700 shadow-lg transition">Créer un compte</a>
+        <a href="{% url 'login' %}" class="bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-blue-800 shadow-lg transition">Connexion</a>
+        <a href="/admin/" class="bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-800 shadow-lg transition">Administration</a>
     </div>
 </div>
 
-<div class="grid md:grid-cols-3 gap-8 mt-12">
+<div class="grid md:grid-cols-3 gap-8 mb-12">
     <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
         <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-user-graduate text-2xl"></i>
@@ -42,4 +37,146 @@
         <p class="text-gray-500">Accès sécurisé et intégrité des données garantie par l'université.</p>
     </div>
 </div>
+{% endif %}
+
+{% if user.is_authenticated %}
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
+        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mr-4">
+            <i class="fas fa-user-graduate text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-3xl font-bold text-gray-800">{{ total_students }}</p>
+            <p class="text-sm text-gray-500 font-medium">Étudiants</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
+        <div class="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mr-4">
+            <i class="fas fa-layer-group text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-3xl font-bold text-gray-800">{{ total_filieres }}</p>
+            <p class="text-sm text-gray-500 font-medium">Filières</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
+        <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center mr-4">
+            <i class="fas fa-file-alt text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-3xl font-bold text-gray-800">{{ total_evaluations }}</p>
+            <p class="text-sm text-gray-500 font-medium">Évaluations</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
+        <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mr-4">
+            <i class="fas fa-chart-bar text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-3xl font-bold text-gray-800">{{ total_cotations }}</p>
+            <p class="text-sm text-gray-500 font-medium">Cotations</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6 mb-8">
+    <!-- Filières Overview -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-university text-blue-600 mr-2"></i>
+            Aperçu des Filières
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
+                        <th class="p-3 border-b">Code</th>
+                        <th class="p-3 border-b">Libellé</th>
+                        <th class="p-3 border-b text-center">Promotions</th>
+                        <th class="p-3 border-b text-center">Cours</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for filiere in filieres %}
+                    <tr class="hover:bg-blue-50 transition">
+                        <td class="p-3 border-b font-mono text-sm text-blue-700 font-bold">{{ filiere.codfiliere }}</td>
+                        <td class="p-3 border-b font-medium">{{ filiere.libelle }}</td>
+                        <td class="p-3 border-b text-center">
+                            <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">{{ filiere.total_promotions }}</span>
+                        </td>
+                        <td class="p-3 border-b text-center">
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">{{ filiere.total_cours }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="p-3 text-center text-gray-500 italic">Aucune filière enregistrée.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Evaluations -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-clock text-yellow-600 mr-2"></i>
+            Dernières Évaluations
+        </h2>
+        <div class="space-y-3">
+            {% for eval in recent_evaluations %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition">
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-800 text-sm">{{ eval.lib }}</p>
+                    <p class="text-xs text-gray-500">
+                        <span class="text-blue-600 font-medium">{{ eval.cours.libelle }}</span>
+                        &middot; {{ eval.type_eval.libelle }}
+                        &middot; Coef. {{ eval.coefficient }}
+                    </p>
+                </div>
+                <span class="{% if eval.is_published %}bg-green-100 text-green-700{% else %}bg-gray-200 text-gray-600{% endif %} px-2 py-1 rounded-full text-xs font-bold ml-2">
+                    {{ eval.is_published|yesno:"Publié,Brouillon" }}
+                </span>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 italic text-center py-6">Aucune évaluation pour le moment.</p>
+            {% endfor %}
+        </div>
+        {% if recent_evaluations %}
+        <div class="text-center mt-4">
+            <a href="{% url 'dashboard' %}" class="text-blue-600 text-sm font-medium hover:underline">Voir toutes les évaluations</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+        <i class="fas fa-bolt text-green-600 mr-2"></i>
+        Actions Rapides
+    </h2>
+    <div class="flex flex-wrap gap-3">
+        <a href="{% url 'dashboard' %}" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center">
+            <i class="fas fa-tachometer-alt mr-2"></i> Tableau de bord
+        </a>
+        <a href="{% url 'results_list' %}" class="bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition flex items-center">
+            <i class="fas fa-chart-line mr-2"></i> Mes Résultats
+        </a>
+        <a href="{% url 'profile' %}" class="bg-purple-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-purple-700 transition flex items-center">
+            <i class="fas fa-user-edit mr-2"></i> Mon Profil
+        </a>
+        {% if user.is_staff %}
+        <a href="{% url 'pending_validations' %}" class="bg-yellow-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition flex items-center">
+            <i class="fas fa-user-check mr-2"></i> Validations
+        </a>
+        <a href="/admin/" class="bg-gray-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-800 transition flex items-center">
+            <i class="fas fa-cog mr-2"></i> Administration
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}
