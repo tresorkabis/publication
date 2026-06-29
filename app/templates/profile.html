@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-10 bg-white shadow-md rounded-xl border border-gray-100 p-8">
+    <h2 class="text-2xl font-bold text-center text-blue-900 mb-6">Mon profil</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {% for field in form %}
+                <div class="space-y-2">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="mt-6 w-full bg-blue-700 text-white py-3 rounded-md font-semibold hover:bg-blue-800 transition">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

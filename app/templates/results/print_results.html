@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Relevé de Notes - ESforca</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 30px; }
+        .univ-name { font-size: 24px; font-bold: true; color: #1e3a8a; text-transform: uppercase; }
+        .doc-title { font-size: 20px; margin-top: 10px; }
+        .student-info { margin-bottom: 30px; }
+        .student-info p { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 12px; text-align: left; }
+        th { bg-color: #f3f4f6; }
+        .footer { margin-top: 50px; text-align: right; }
+        .signature { margin-top: 60px; }
+        @media print {
+            .no-print { display: none; }
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Imprimer maintenant
+        </button>
+        <a href="{% url 'results_list' %}" style="margin-left: 10px; text-decoration: none; color: #666;">Retour</a>
+    </div>
+
+    <div class="header">
+        <div class="univ-name">ESforca</div>
+        <div class="doc-title">RELEVÉ DE NOTES ACADÉMIQUES</div>
+    </div>
+
+    <div class="student-info">
+        <p><strong>Nom & Prénom :</strong> {{ user.last_name }} {{ user.first_name }}</p>
+        <p><strong>Matricule :</strong> {{ user.mat }}</p>
+        <p><strong>Date d'édition :</strong> {{ today|date:"d/m/Y" }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Cours</th>
+                <th>Évaluation</th>
+                <th>Coefficient</th>
+                <th>Note / 20</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cot in cotations %}
+            <tr>
+                <td>{{ cot.evaluation.cours.libelle }}</td>
+                <td>{{ cot.evaluation.lib }}</td>
+                <td>{{ cot.evaluation.coefficient }}</td>
+                <td><strong>{{ cot.note }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Fait à ......................., le {{ today|date:"d/m/Y" }}</p>
+        <div class="signature">
+            <p><strong>Le Secrétaire Académique</strong></p>
+            <br><br>
+            <p>__________________________</p>
+        </div>
+    </div>
+</body>
+</html>

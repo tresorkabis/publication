@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center py-20">
+    <h1 class="text-5xl font-extrabold text-blue-900 mb-6">Portail des Résultats Académiques</h1>
+    <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">Bienvenue sur la plateforme officielle de publication des résultats de l'ESforca. Connectez-vous pour consulter vos notes.</p>
+    
+    <div class="flex justify-center space-x-4">
+        {% if not user.is_authenticated %}
+            <a href="{% url 'register' %}" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-green-700 shadow-lg transition">Créer un compte</a>
+            <a href="{% url 'login' %}" class="bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-blue-800 shadow-lg transition">Connexion</a>
+            <a href="/admin/" class="bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-800 shadow-lg transition">Administration</a>
+        {% else %}
+            <a href="{% url 'dashboard' %}" class="bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-blue-800 shadow-lg transition">Aller au Tableau de bord</a>
+            {% if user.is_staff %}
+                <a href="/admin/" class="bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-800 shadow-lg transition">Administration</a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid md:grid-cols-3 gap-8 mt-12">
+    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-user-graduate text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Étudiants</h3>
+        <p class="text-gray-500">Consultez vos notes en temps réel dès leur publication officielle.</p>
+    </div>
+    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-chalkboard-teacher text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Enseignants</h3>
+        <p class="text-gray-500">Saisissez et validez les cotations pour vos cours respectifs.</p>
+    </div>
+    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-shield-alt text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Sécurité</h3>
+        <p class="text-gray-500">Accès sécurisé et intégrité des données garantie par l'université.</p>
+    </div>
+</div>
+{% endblock %}

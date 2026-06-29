@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESFORCA - Résultats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; } 
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    <nav class="bg-blue-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="text-xl font-bold tracking-wider">ESFORCA</a>
+                </div>
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-button" class="text-white focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Tableau de bord</a>
+                            <a href="{% url 'results_list' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Mes Résultats</a>
+                            <a href="{% url 'profile' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Profil</a>
+                            {% if user.is_staff %}
+                                <a href="/admin/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Administration</a>
+                                <a href="{% url 'pending_validations' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Validations</a>
+                            {% endif %}
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700">Déconnexion</button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'register' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Inscription</a>
+                            <a href="{% url 'login' %}" class="bg-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition">Connexion</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-blue-800 px-4 py-3 space-y-2">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Tableau de bord</a>
+                <a href="{% url 'results_list' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Mes Résultats</a>
+                <a href="{% url 'profile' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Profil</a>
+                {% if user.is_staff %}
+                    <a href="/admin/" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Administration</a>
+                {% endif %}
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-red-700">Déconnexion</button>
+                </form>
+            {% else %}
+                <a href="{% url 'register' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Inscription</a>
+                <a href="{% url 'login' %}" class="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 hover:bg-blue-500">Connexion</a>
+            {% endif %}
+        </div>
+    </nav>
+    <script>
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            var menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+    </script>
+
+    <main class="flex-grow">
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="bg-white border-t mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            &copy; 2026 ESFORCA. Tous droits réservés.
+        </div>
+    </footer>
+</body>
+</html>
