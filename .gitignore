@@ -35,8 +35,9 @@ env/
 .env.local
 .env.production
 
-# Migrations - uncomment if you want to ignore all migrations
-# app/migrations/
+# Migrations
+app/migrations/
+*.pyc
 
 # Coverage
 htmlcov/
