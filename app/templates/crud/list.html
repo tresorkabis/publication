@@ -16,8 +16,8 @@
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
-                    {% for field in object_list.model._meta.fields %}
-                        <th class="p-3 border-b">{{ field.verbose_name|title }}</th>
+                    {% for field_name, field_label in fields %}
+                        <th class="p-3 border-b">{{ field_label }}</th>
                     {% endfor %}
                     <th class="p-3 border-b">Actions</th>
                 </tr>
@@ -25,8 +25,8 @@
             <tbody>
                 {% for obj in object_list %}
                     <tr class="hover:bg-gray-50 transition">
-                        {% for field in obj._meta.fields %}
-                            <td class="p-3 border-b">{{ getattr(obj, field.name) }}</td>
+                        {% for field_name, field_label in fields %}
+                            <td class="p-3 border-b">{{ obj|get_attr:field_name }}</td>
                         {% endfor %}
                         <td class="p-3 border-b">
                             <div class="flex flex-wrap gap-2">
@@ -41,7 +41,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="{{ object_list.model._meta.fields|length|add:'1' }}" class="p-3 text-center text-gray-500 italic">Aucun élément trouvé.</td>
+                        <td colspan="{{ fields|length|add:'1' }}" class="p-3 text-center text-gray-500 italic">Aucun élément trouvé.</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -49,3 +49,30 @@
     </div>
 </div>
 {% endblock %}
+<task_progress>
+- [x] Lire config/settings.py
+- [x] Modifier langue et fuseau horaire
+- [x] Lire les modèles de données
+- [x] Lire les vues existantes
+- [x] Réécrire la vue dashboard
+- [x] Créer template dashboard moderne
+- [x] Supprimer les doublons dans views.py
+- [x] Traduire toutes les URLs en français
+- [x] Nettoyer les anciens chemins d'URL
+- [x] Vérifier la cohérence entre les noms d'URL et les redirections
+- [x] Mettre le dashboard comme page d'accueil
+- [x] Configurer LOGIN_URL pour les redirections
+- [x] Rendre le dashboard protégé (connecté uniquement)
+- [x] Moderniser la page de connexion
+- [x] Analyser reset_and_migrate.sh
+- [x] Ajouter des données de démonstration complètes
+- [x] Mettre à jour reset_and_migrate.sh pour inclure le seed
+- [x] Uniformiser tous les mots de passe à "demo"
+- [x] Créer reset_and_migrate.bat pour Windows
+- [x] Ajouter AUTH_USER_MODEL dans settings.py
+- [x] Corriger les dates des semestres
+- [x] Optimiser la topbar
+- [x] Moderniser la page de profil
+- [x] Corriger le template CRUD list (TemplateSyntaxError)
+</task_progress>
+</write_to_file>

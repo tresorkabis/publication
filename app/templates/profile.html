@@ -1,22 +1,169 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-lg mx-auto mt-10 bg-white shadow-md rounded-xl border border-gray-100 p-8">
-    <h2 class="text-2xl font-bold text-center text-blue-900 mb-6">Mon profil</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {% for field in form %}
-                <div class="space-y-2">
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700">{{ field.label }}</label>
-                    {{ field }}
-                    {% for error in field.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endfor %}
+<style>
+    .profile-container {
+        max-width: 700px;
+        margin: 2rem auto;
+    }
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+    }
+    .profile-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0d3b66, #1c6ca8);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 auto 1rem;
+    }
+    .profile-header h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0d3b66;
+        margin: 0;
+    }
+    .profile-header p {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.4rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 0.7rem 0.9rem;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        color: #1f2937;
+        background: #f9fafb;
+        transition: all 0.2s;
+        outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #1c6ca8;
+        box-shadow: 0 0 0 3px rgba(28,108,168,0.1);
+        background: white;
+    }
+    .form-group .error {
+        color: #dc2626;
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+    }
+    .btn-save {
+        width: 100%;
+        padding: 0.85rem;
+        background: linear-gradient(135deg, #0d3b66, #1c6ca8);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 0.5rem;
+    }
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(13,59,102,0.25);
+    }
+    .btn-save i {
+        margin-right: 0.5rem;
+    }
+    @media (max-width: 640px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .profile-card { padding: 1.5rem; }
+    }
+</style>
+
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+            </div>
+            <h2>Mon profil</h2>
+            <p>{{ user.email }}</p>
         </div>
-        <button type="submit" class="mt-6 w-full bg-blue-700 text-white py-3 rounded-md font-semibold hover:bg-blue-800 transition">Enregistrer</button>
-    </form>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-grid">
+                {% for field in form %}
+                    <div class="form-group {% if field.name == 'adresse' or field.name == 'email' %}full-width{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <p class="error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn-save">
+                <i class="fas fa-save"></i>Enregistrer les modifications
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}
+<task_progress>
+- [x] Lire config/settings.py
+- [x] Modifier langue et fuseau horaire
+- [x] Lire les modèles de données
+- [x] Lire les vues existantes
+- [x] Réécrire la vue dashboard
+- [x] Créer template dashboard moderne
+- [x] Supprimer les doublons dans views.py
+- [x] Traduire toutes les URLs en français
+- [x] Nettoyer les anciens chemins d'URL
+- [x] Vérifier la cohérence entre les noms d'URL et les redirections
+- [x] Mettre le dashboard comme page d'accueil
+- [x] Configurer LOGIN_URL pour les redirections
+- [x] Rendre le dashboard protégé (connecté uniquement)
+- [x] Moderniser la page de connexion
+- [x] Analyser reset_and_migrate.sh
+- [x] Ajouter des données de démonstration complètes
+- [x] Mettre à jour reset_and_migrate.sh pour inclure le seed
+- [x] Uniformiser tous les mots de passe à "demo"
+- [x] Créer reset_and_migrate.bat pour Windows
+- [x] Ajouter AUTH_USER_MODEL dans settings.py
+- [x] Corriger les dates des semestres
+- [x] Optimiser la topbar
+- [x] Moderniser la page de profil
+</task_progress>
+</write_to_file>

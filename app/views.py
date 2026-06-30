@@ -253,6 +253,11 @@ class BaseCRUDListView(StaffRequiredMixin, ListView):
     template_name = 'crud/list.html'
     context_object_name = 'object_list'
 
+    def get_fields(self):
+        """Retourne la liste des (nom_du_champ, libellé) pour l'affichage"""
+        model = self.model
+        return [(f.name, f.verbose_name.title()) for f in model._meta.fields]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
@@ -261,6 +266,7 @@ class BaseCRUDListView(StaffRequiredMixin, ListView):
             'create_url_name': getattr(self, 'create_url_name', ''),
             'update_url_name': getattr(self, 'update_url_name', ''),
             'delete_url_name': getattr(self, 'delete_url_name', ''),
+            'fields': self.get_fields(),
         })
         return context
 
