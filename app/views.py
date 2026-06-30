@@ -70,16 +70,16 @@ def dashboard(request):
     total_filieres = Filiere.objects.count()
 
     # Données pour le graphique des étudiants par promotion
-    promotions_data = list(Promotion.objects.values_list('libnom', flat=True))
+    promotions_data = list(Promotion.objects.values_list('libelle', flat=True))
     students_count_data = []
     for promotion in Promotion.objects.all():
         students_count_data.append(Inscription.objects.filter(promotion=promotion).count())
 
     # Dernières inscriptions (5 dernières)
-    recent_inscriptions = Inscription.objects.select_related('etudiant__user', 'promotion').order_by('-idinscription')[:5]
+    recent_inscriptions = Inscription.objects.select_related('etudiant__user', 'promotion').order_by('-id')[:5]
 
-    # Dernières évaluations publiées (5 dernières)
-    recent_evaluations = Evaluation.objects.filter(is_published=True).select_related('cours', 'type_eval').order_by('-published_at')[:5]
+    # Dernières évaluations (5 dernières)
+    recent_evaluations = Evaluation.objects.select_related('cours', 'type_evaluation').order_by('-date')[:5]
 
     context = {
         'total_users': total_users,
@@ -113,18 +113,16 @@ def validate_user(request, user_id):
         messages.success(request, f"Le compte de {user.username} a été validé.")
     return redirect('pending_validations')
 
-
 def results_list(request):
     if not request.user.is_authenticated:
         return redirect('login')
-    
+
     if hasattr(request.user, 'etudiant'):
         cotations = Cotation.objects.filter(
-            etudiant=request.user.etudiant,
-            evaluation__is_published=True
+            etudiant=request.user.etudiant
         ).select_related('evaluation', 'evaluation__cours')
         return render(request, 'results/student_results.html', {'cotations': cotations})
-    
+
     return redirect('dashboard')
 
 @login_required
@@ -132,10 +130,10 @@ def enter_marks(request, evaluation_id):
     if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
-    
+
     evaluation = Evaluation.objects.get(pk=evaluation_id)
     students = Etudiant.objects.filter(inscription__promotion__filiere=evaluation.cours.filiere).distinct()
-    
+
     if request.method == 'POST':
         for student in students:
             note = request.POST.get(f'note_{student.pk}')
@@ -147,7 +145,7 @@ def enter_marks(request, evaluation_id):
                 )
         messages.success(request, "Les notes ont été enregistrées avec succès.")
         return redirect('dashboard')
-        
+
     return render(request, 'results/enter_marks.html', {'evaluation': evaluation, 'students': students})
 
 @login_required
@@ -174,7 +172,7 @@ def edit_mark(request, cotation_id):
     if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
-    
+
     cotation = Cotation.objects.get(pk=cotation_id)
     if request.method == 'POST':
         note = request.POST.get('note')
@@ -183,7 +181,7 @@ def edit_mark(request, cotation_id):
             cotation.save()
             messages.success(request, "La note a été modifiée.")
             return redirect('manage_marks', evaluation_id=cotation.evaluation.idevaluation)
-            
+
     return render(request, 'results/edit_mark.html', {'cotation': cotation})
 
 @login_required
@@ -191,7 +189,7 @@ def delete_mark(request, cotation_id):
     if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
-    
+
     cotation = Cotation.objects.get(pk=cotation_id)
     eval_id = cotation.evaluation.idevaluation
     cotation.delete()
@@ -203,7 +201,7 @@ def manage_marks(request, evaluation_id):
     if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
-    
+
     evaluation = Evaluation.objects.get(pk=evaluation_id)
     cotations = Cotation.objects.filter(evaluation=evaluation).select_related('etudiant', 'etudiant__user')
     return render(request, 'results/manage_marks.html', {
@@ -237,7 +235,6 @@ def publish_evaluation(request, evaluation_id):
 
     return render(request, 'results/publish_evaluation.html', {'evaluation': evaluation})
 
-
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_staff
@@ -247,7 +244,6 @@ class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
             return super().handle_no_permission()
         messages.error(self.request, "Accès réservé au personnel.")
         return redirect('dashboard')
-
 
 class BaseCRUDListView(StaffRequiredMixin, ListView):
     template_name = 'crud/list.html'
@@ -270,7 +266,6 @@ class BaseCRUDListView(StaffRequiredMixin, ListView):
         })
         return context
 
-
 class BaseCRUDFormView(StaffRequiredMixin):
     template_name = 'crud/form.html'
 
@@ -282,14 +277,11 @@ class BaseCRUDFormView(StaffRequiredMixin):
         })
         return context
 
-
 class BaseCRUDCreateView(BaseCRUDFormView, CreateView):
     pass
 
-
 class BaseCRUDUpdateView(BaseCRUDFormView, UpdateView):
     pass
-
 
 class BaseCRUDDeleteView(StaffRequiredMixin, DeleteView):
     template_name = 'crud/confirm_delete.html'
@@ -303,7 +295,6 @@ class BaseCRUDDeleteView(StaffRequiredMixin, DeleteView):
         })
         return context
 
-
 class FiliereListView(BaseCRUDListView):
     model = Filiere
     model_name = 'Filières'
@@ -312,22 +303,19 @@ class FiliereListView(BaseCRUDListView):
     update_url_name = 'filiere_update'
     delete_url_name = 'filiere_delete'
 
-
 class FiliereCreateView(BaseCRUDCreateView):
     model = Filiere
-    fields = ['codfiliere', 'libelle', 'descript', 'chef']
+    fields = ['code', 'libelle', 'description', 'chef']
     success_url = reverse_lazy('filiere_list')
     model_name = 'Filière'
     action = 'Ajouter'
 
-
 class FiliereUpdateView(BaseCRUDUpdateView):
     model = Filiere
-    fields = ['codfiliere', 'libelle', 'descript', 'chef']
+    fields = ['code', 'libelle', 'description', 'chef']
     success_url = reverse_lazy('filiere_list')
     model_name = 'Filière'
     action = 'Modifier'
-
 
 class FiliereDeleteView(BaseCRUDDeleteView):
     model = Filiere
@@ -335,7 +323,6 @@ class FiliereDeleteView(BaseCRUDDeleteView):
     model_name = 'Filière'
     singular_name = 'Filière'
     list_url_name = 'filiere_list'
-
 
 class PromotionListView(BaseCRUDListView):
     model = Promotion
@@ -345,22 +332,19 @@ class PromotionListView(BaseCRUDListView):
     update_url_name = 'promotion_update'
     delete_url_name = 'promotion_delete'
 
-
 class PromotionCreateView(BaseCRUDCreateView):
     model = Promotion
-    fields = ['filiere', 'libnom', 'annee', 'niveau']
+    fields = ['filiere', 'libelle']
     success_url = reverse_lazy('promotion_list')
     model_name = 'Promotion'
     action = 'Ajouter'
 
-
 class PromotionUpdateView(BaseCRUDUpdateView):
     model = Promotion
-    fields = ['filiere', 'libnom', 'annee', 'niveau']
+    fields = ['filiere', 'libelle']
     success_url = reverse_lazy('promotion_list')
     model_name = 'Promotion'
     action = 'Modifier'
-
 
 class PromotionDeleteView(BaseCRUDDeleteView):
     model = Promotion
@@ -368,7 +352,6 @@ class PromotionDeleteView(BaseCRUDDeleteView):
     model_name = 'Promotion'
     singular_name = 'Promotion'
     list_url_name = 'promotion_list'
-
 
 class CoursListView(BaseCRUDListView):
     model = Cours
@@ -378,22 +361,19 @@ class CoursListView(BaseCRUDListView):
     update_url_name = 'cours_update'
     delete_url_name = 'cours_delete'
 
-
 class CoursCreateView(BaseCRUDCreateView):
     model = Cours
-    fields = ['filiere', 'semestre', 'codcours', 'libelle']
+    fields = ['filiere', 'semestre', 'code', 'libelle', 'volume_horaire']
     success_url = reverse_lazy('cours_list')
     model_name = 'Cours'
     action = 'Ajouter'
 
-
 class CoursUpdateView(BaseCRUDUpdateView):
     model = Cours
-    fields = ['filiere', 'semestre', 'codcours', 'libelle']
+    fields = ['filiere', 'semestre', 'code', 'libelle', 'volume_horaire']
     success_url = reverse_lazy('cours_list')
     model_name = 'Cours'
     action = 'Modifier'
-
 
 class CoursDeleteView(BaseCRUDDeleteView):
     model = Cours
@@ -401,7 +381,6 @@ class CoursDeleteView(BaseCRUDDeleteView):
     model_name = 'Cours'
     singular_name = 'Cours'
     list_url_name = 'cours_list'
-
 
 class TypeEvaluationListView(BaseCRUDListView):
     model = TypeEvaluation
@@ -411,22 +390,19 @@ class TypeEvaluationListView(BaseCRUDListView):
     update_url_name = 'typeevaluation_update'
     delete_url_name = 'typeevaluation_delete'
 
-
 class TypeEvaluationCreateView(BaseCRUDCreateView):
     model = TypeEvaluation
-    fields = ['libelle', 'descript']
+    fields = ['libelle']
     success_url = reverse_lazy('typeevaluation_list')
     model_name = 'Type d\'évaluation'
     action = 'Ajouter'
 
-
 class TypeEvaluationUpdateView(BaseCRUDUpdateView):
     model = TypeEvaluation
-    fields = ['libelle', 'descript']
+    fields = ['libelle']
     success_url = reverse_lazy('typeevaluation_list')
     model_name = 'Type d\'évaluation'
     action = 'Modifier'
-
 
 class TypeEvaluationDeleteView(BaseCRUDDeleteView):
     model = TypeEvaluation
@@ -434,7 +410,6 @@ class TypeEvaluationDeleteView(BaseCRUDDeleteView):
     model_name = 'Type d\'évaluation'
     singular_name = 'Type d\'évaluation'
     list_url_name = 'typeevaluation_list'
-
 
 class EvaluationListView(BaseCRUDListView):
     model = Evaluation
@@ -444,36 +419,19 @@ class EvaluationListView(BaseCRUDListView):
     update_url_name = 'evaluation_update'
     delete_url_name = 'evaluation_delete'
 
-
 class EvaluationCreateView(BaseCRUDCreateView):
     model = Evaluation
-    fields = ['type_eval', 'cours', 'lib', 'coefficient', 'duree', 'is_published']
+    fields = ['type_evaluation', 'cours', 'date']
     success_url = reverse_lazy('evaluation_list')
     model_name = 'Évaluation'
     action = 'Ajouter'
 
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        if self.object.is_published and self.object.published_at is None:
-            self.object.published_at = timezone.now()
-            self.object.save(update_fields=['published_at'])
-        return response
-
-
 class EvaluationUpdateView(BaseCRUDUpdateView):
     model = Evaluation
-    fields = ['type_eval', 'cours', 'lib', 'coefficient', 'duree', 'is_published']
+    fields = ['type_evaluation', 'cours', 'date']
     success_url = reverse_lazy('evaluation_list')
     model_name = 'Évaluation'
     action = 'Modifier'
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        if self.object.is_published and self.object.published_at is None:
-            self.object.published_at = timezone.now()
-            self.object.save(update_fields=['published_at'])
-        return response
-
 
 class EvaluationDeleteView(BaseCRUDDeleteView):
     model = Evaluation
@@ -481,4 +439,3 @@ class EvaluationDeleteView(BaseCRUDDeleteView):
     model_name = 'Évaluation'
     singular_name = 'Évaluation'
     list_url_name = 'evaluation_list'
-

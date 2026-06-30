@@ -195,11 +195,6 @@
                                     <i class="fas fa-clipboard-check"></i>Résultats
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
-                                    <i class="fas fa-user"></i>Profil
-                                </a>
-                            </li>
                             {% if user.is_staff %}
                                 <li class="nav-item">
                                     <a class="nav-link" href="/admin/">
