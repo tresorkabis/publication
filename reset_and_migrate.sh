@@ -39,5 +39,17 @@ python manage.py makemigrations
 echo -e "${GREEN}Application des migrations...${NC}"
 python manage.py migrate
 
+# 5. Générer les données de démonstration
+echo -e "${GREEN}Génération des données de démonstration...${NC}"
+python manage.py seed_demo_data
+
 echo -e "${GREEN}=== Réinitialisation et migration terminées avec succès ===${NC}"
 echo -e "${GREEN}Vous pouvez maintenant démarrer le serveur avec : ./run.sh start${NC}"
+echo -e ""
+echo -e "${YELLOW}=== Comptes de démonstration (mot de passe : demo) ===${NC}"
+echo -e "  Super Admin : admin@esforca.cd"
+echo -e "  Admin       : admin2@esforca.cd"
+echo -e "  Secrétaire  : secretaire@esforca.cd"
+echo -e "  Chef filière: chef.inf@esforca.cd"
+echo -e "  Enseignant  : enseignant.inf1@esforca.cd"
+echo -e "  Étudiant    : etudiant.inf.1@esforca.cd"
