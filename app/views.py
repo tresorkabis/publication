@@ -63,108 +63,34 @@ def profile(request):
 
 @login_required
 def dashboard(request):
-    user = request.user
+    # Statistiques générales
+    total_users = User.objects.count()
+    total_students = Etudiant.objects.count()
+    total_staff = Personnel.objects.count()
+    total_filieres = Filiere.objects.count()
+
+    # Données pour le graphique des étudiants par promotion
+    promotions_data = list(Promotion.objects.values_list('libnom', flat=True))
+    students_count_data = []
+    for promotion in Promotion.objects.all():
+        students_count_data.append(Inscription.objects.filter(promotion=promotion).count())
+
+    # Dernières inscriptions (5 dernières)
+    recent_inscriptions = Inscription.objects.select_related('etudiant__user', 'promotion').order_by('-idinscription')[:5]
+
+    # Dernières évaluations publiées (5 dernières)
+    recent_evaluations = Evaluation.objects.filter(is_published=True).select_related('cours', 'type_eval').order_by('-published_at')[:5]
+
     context = {
-        'inscriptions': [],
-        'cotations': [],
-        'filieres': [],
-        'evaluations': [],
-        'unpublished_evaluations': [],
-        'inscriptions_count': 0,
-        'cotations_count': 0,
-        'filieres_count': 0,
-        'evaluations_count': 0,
-        'unpublished_evaluations_count': 0,
-        'dashboard_metrics': [],
-        'chart_labels': [],
-        'chart_data': [],
-        'chart_published_status': [],
-        'now': timezone.now(),
+        'total_users': total_users,
+        'total_students': total_students,
+        'total_staff': total_staff,
+        'total_filieres': total_filieres,
+        'promotions_data': json.dumps(promotions_data),
+        'students_count_data': json.dumps(students_count_data),
+        'recent_inscriptions': recent_inscriptions,
+        'recent_evaluations': recent_evaluations,
     }
-
-    if hasattr(user, 'etudiant'):
-        context['is_student'] = True
-        context['etudiant'] = user.etudiant
-
-        inscriptions = Inscription.objects.filter(etudiant=user.etudiant).select_related('promotion__filiere')
-        cotations = Cotation.objects.filter(
-            etudiant=user.etudiant,
-            evaluation__is_published=True
-        ).select_related('evaluation', 'evaluation__cours')
-
-        context['inscriptions'] = inscriptions
-        context['cotations'] = cotations
-        context['inscriptions_count'] = inscriptions.count()
-        context['cotations_count'] = cotations.count()
-
-        context['dashboard_metrics'] = [
-            {'title': 'Inscriptions', 'value': inscriptions.count(), 'icon': 'fa-user-graduate', 'color': 'primary'},
-            {'title': 'Résultats publiés', 'value': cotations.count(), 'icon': 'fa-chart-line', 'color': 'success'},
-            {'title': 'Filières actives', 'value': inscriptions.values('promotion__filiere').distinct().count(), 'icon': 'fa-building-columns', 'color': 'info'},
-        ]
-
-        course_labels = []
-        course_averages = []
-        for course in cotations.values_list('evaluation__cours__libelle', flat=True).distinct():
-            student_course_notes = cotations.filter(evaluation__cours__libelle=course).values_list('note', flat=True)
-            notes = [float(n) for n in student_course_notes if n is not None]
-            if notes:
-                course_labels.append(course)
-                course_averages.append(sum(notes) / len(notes))
-
-        context['chart_labels'] = json.dumps(course_labels)
-        context['chart_data'] = json.dumps(course_averages)
-        context['chart_published_status'] = json.dumps([
-            {'label': 'Publié', 'value': cotations.count()},
-            {'label': 'En attente', 'value': max(inscriptions.count() - cotations.count(), 0)},
-        ])
-
-    elif hasattr(user, 'personnel'):
-        context['is_staff'] = True
-        context['personnel'] = user.personnel
-
-        evaluations = Evaluation.objects.select_related('cours', 'type_eval')
-        context['evaluations'] = evaluations
-        context['evaluations_count'] = evaluations.count()
-
-        total_students = Etudiant.objects.count()
-        total_filieres = Filiere.objects.count()
-        total_evaluations = evaluations.count()
-        total_published = Evaluation.objects.filter(is_published=True).count()
-        total_unpublished = Evaluation.objects.filter(is_published=False).count()
-
-        context['dashboard_metrics'] = [
-            {'title': 'Étudiants', 'value': total_students, 'icon': 'fa-users', 'color': 'primary'},
-            {'title': 'Filières', 'value': total_filieres, 'icon': 'fa-building-columns', 'color': 'info'},
-            {'title': 'Évaluations publiées', 'value': total_published, 'icon': 'fa-check-circle', 'color': 'success'},
-            {'title': 'Évaluations en attente', 'value': total_unpublished, 'icon': 'fa-hourglass-half', 'color': 'warning'},
-        ]
-
-        eval_type_counts = Evaluation.objects.values('type_eval__libelle').annotate(count=Count('id')).order_by('-count')
-        context['chart_labels'] = json.dumps([item['type_eval__libelle'] for item in eval_type_counts])
-        context['chart_data'] = json.dumps([item['count'] for item in eval_type_counts])
-
-        context['chart_published_status'] = json.dumps([
-            {'label': 'Publiées', 'value': total_published},
-            {'label': 'Non publiées', 'value': total_unpublished},
-        ])
-
-        if user.has_role('chef de filière'):
-            context['is_chef'] = True
-            context['chef'] = user.personnel
-            filieres = user.personnel.filieres_dirigees.all()
-            evaluations = evaluations.filter(cours__filiere__in=filieres)
-            unpublished_evaluations = Evaluation.objects.filter(
-                cours__filiere__in=filieres,
-                is_published=False,
-                cotation__isnull=False
-            ).distinct().select_related('cours')
-            context['filieres'] = filieres
-            context['evaluations'] = evaluations
-            context['unpublished_evaluations'] = unpublished_evaluations
-            context['filieres_count'] = filieres.count()
-            context['evaluations_count'] = evaluations.count()
-            context['unpublished_evaluations_count'] = unpublished_evaluations.count()
 
     return render(request, 'dashboard.html', context)
 
@@ -212,7 +138,7 @@ def enter_marks(request, evaluation_id):
     
     if request.method == 'POST':
         for student in students:
-            note = request.POST.get(f'note_{student.id}')
+            note = request.POST.get(f'note_{student.pk}')
             if note:
                 Cotation.objects.update_or_create(
                     etudiant=student,
@@ -549,3 +475,4 @@ class EvaluationDeleteView(BaseCRUDDeleteView):
     model_name = 'Évaluation'
     singular_name = 'Évaluation'
     list_url_name = 'evaluation_list'
+

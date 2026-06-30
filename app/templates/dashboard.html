@@ -1,254 +1,565 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-xl py-5">
-    <div class="row g-4 mb-4">
-        <div class="col-lg-8">
-            <div class="card card-soft border-0 shadow-sm overflow-hidden">
-                <div class="row g-0 align-items-center">
-                    <div class="col-md-7 p-5 bg-gradient-primary text-white">
-                        <div class="mb-3 text-uppercase small opacity-75">Tableau de bord</div>
-                        <h2 class="display-6 fw-bold mb-3">Bonjour {{ user.prenom }} {{ user.nom }} !</h2>
-                        <p class="mb-0 opacity-85">Vos indicateurs clés sont consolidés ici. Suivez les tendances, publiez les évaluations et gérez vos filières efficacement.</p>
-                    </div>
-                    <div class="col-md-5 p-5">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <div>
-                                <div class="text-uppercase text-muted small">Rôle</div>
-                                <div class="h5 fw-bold">{% if is_student %}Étudiant{% elif is_chef %}Chef de filière{% elif is_staff %}Personnel{% else %}Utilisateur{% endif %}</div>
-                            </div>
-                            <i class="fas fa-tachometer-alt fa-3x text-primary"></i>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="border rounded-3 p-3">
-                                    <div class="text-muted small">Dernière connexion</div>
-                                    <div class="fw-semibold">{{ user.last_login|date:"d/m/Y H:i"|default:"N/A" }}</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="border rounded-3 p-3">
-                                    <div class="text-muted small">Email</div>
-                                    <div class="fw-semibold text-truncate">{{ user.email }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<!-- Dashboard moderne avec design actuel -->
+<style>
+    /* Reset et variables modernes */
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #c7d2fe;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+
+    /* Police moderne */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .dashboard-2024 {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: var(--light);
+    }
+
+    .dashboard-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .dashboard-title i {
+        color: var(--primary);
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card-2024 {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card-2024::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--primary), var(--primary-light));
+    }
+
+    .stat-card-2024:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .stat-info h3 {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-info .value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--dark);
+        line-height: 1;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-icon.users { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+    .stat-icon.students { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .stat-icon.staff { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .stat-icon.filieres { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+    .stat-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .stat-footer a {
+        color: var(--primary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: color 0.2s;
+    }
+
+    .stat-footer a:hover {
+        color: var(--primary-light);
+        gap: 0.5rem;
+    }
+
+    .chart-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .chart-container {
+        height: 350px;
+    }
+
+    .tables-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .table-card-2024 {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+
+    .table-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .table-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .modern-table-2024 {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .modern-table-2024 th {
+        background: var(--light);
+        color: #6b7280;
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modern-table-2024 td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--dark);
+    }
+
+    .modern-table-2024 tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modern-table-2024 tr:hover {
+        background: rgba(79, 70, 229, 0.03);
+    }
+
+    .badge-2024 {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 9999px;
+    }
+
+    .badge-success-2024 {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .badge-secondary-2024 {
+        background: rgba(156, 163, 175, 0.1);
+        color: #6b7280;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-title {
+            font-size: 1.5rem;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+
+        .tables-container {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-content {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+
+<div class="dashboard-2024">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            <i class="fas fa-chart-line"></i>
+            Tableau de Bord 2024
+        </h1>
+    </div>
+
+    <!-- Statistiques modernes -->
+    <div class="stats-container">
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Utilisateurs Totaux</h3>
+                    <div class="value">{{ total_users }}</div>
                 </div>
+                <div class="stat-icon users">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <a href="{% url 'home' %}">
+                    Voir détails
+                    <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card card-soft border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Actions rapides</h5>
-                    <div class="list-group list-group-flush">
-                        <a href="{% url 'results_list' %}" class="list-group-item list-group-item-action">Voir mes résultats</a>
-                        {% if is_staff or is_chef %}
-                        <a href="{% url 'filiere_list' %}" class="list-group-item list-group-item-action">Gérer les filières</a>
-                        <a href="{% url 'dashboard' %}?focus=evaluations" class="list-group-item list-group-item-action">Voir les évaluations</a>
-                        {% endif %}
-                    </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Étudiants Inscrits</h3>
+                    <div class="value">{{ total_students }}</div>
                 </div>
+                <div class="stat-icon students">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <a href="{% url 'home' %}">
+                    Voir détails
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Membres Personnel</h3>
+                    <div class="value">{{ total_staff }}</div>
+                </div>
+                <div class="stat-icon staff">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <a href="{% url 'home' %}">
+                    Voir détails
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Filieres Actives</h3>
+                    <div class="value">{{ total_filieres }}</div>
+                </div>
+                <div class="stat-icon filieres">
+                    <i class="fas fa-building-columns"></i>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <a href="{% url 'filiere_list' %}">
+                    Voir détails
+                    <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="row g-3 mb-4">
-        {% for metric in dashboard_metrics %}
-        <div class="col-sm-6 col-xl-3">
-            <div class="card metric-card p-4 border-0 text-dark h-100">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <h6 class="text-uppercase text-muted mb-1">{{ metric.title }}</h6>
-                        <div class="h3 fw-bold">{{ metric.value }}</div>
-                    </div>
-                    <div class="icon-shape bg-{{ metric.color }} text-white shadow-sm">
-                        <i class="fas {{ metric.icon }}"></i>
-                    </div>
-                </div>
-                <div class="text-muted small">Vue rapide sur votre performance.</div>
+    <!-- Graphique moderne -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-chart-bar"></i>
+                Répartition Étudiants par Promotion
             </div>
         </div>
-        {% endfor %}
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-lg-6">
-            <div class="card card-soft border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div>
-                            <h5 class="card-title mb-1">Tendances principales</h5>
-                            <p class="text-muted small mb-0">Moyennes par cours.</p>
-                        </div>
-                        <span class="badge bg-primary">Live</span>
-                    </div>
-                    <canvas id="dashboardChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card card-soft border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div>
-                            <h5 class="card-title mb-1">État des évaluations</h5>
-                            <p class="text-muted small mb-0">Répartition par statut.</p>
-                        </div>
-                        <span class="badge bg-info">Synthèse</span>
-                    </div>
-                    <canvas id="secondaryChart"></canvas>
-                </div>
-            </div>
+        <div class="chart-container">
+            <canvas id="modernChart"></canvas>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-xl-8">
-            <div class="card card-soft border-0 shadow-sm">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0">Dernières activités</h5>
-                        <small class="text-muted">Aperçu récent des éléments clés.</small>
-                    </div>
-                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">Actualiser</a>
+    <!-- Tableaux modernes -->
+    <div class="tables-container">
+        <div class="table-card-2024">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-users"></i>
+                    Dernières Inscriptions
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light text-uppercase small">
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Détail</th>
-                                    <th>Date</th>
-                                    <th class="text-end">Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if is_student %}
-                                    {% for cot in cotations|slice:":5" %}
-                                    <tr>
-                                        <td>Note publiée</td>
-                                        <td>{{ cot.evaluation.cours.libelle }} – {{ cot.evaluation.lib }}</td>
-                                        <td>{{ cot.evaluation.published_at|date:"d/m/Y" }}</td>
-                                        <td class="text-end text-success">Publiée</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="4" class="text-center py-4 text-muted">Aucune note publiée pour le moment.</td></tr>
-                                    {% endfor %}
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table-2024">
+                    <thead>
+                        <tr>
+                            <th>Étudiant</th>
+                            <th>Promotion</th>
+                            <th>Année</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inscription in recent_inscriptions %}
+                        <tr>
+                            <td>{{ inscription.etudiant.user.get_full_name }}</td>
+                            <td>{{ inscription.promotion.libnom }}</td>
+                            <td>{{ inscription.annee }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="empty-state">Aucune inscription récente</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-card-2024">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-clipboard-list"></i>
+                    Évaluations Récentes
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table-2024">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evaluation in recent_evaluations %}
+                        <tr>
+                            <td>{{ evaluation.cours.libelle }}</td>
+                            <td>{{ evaluation.type_eval.libelle }}</td>
+                            <td>{{ evaluation.published_at|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if evaluation.is_published %}
+                                <span class="badge-2024 badge-success-2024">Publié</span>
                                 {% else %}
-                                    {% for eval in evaluations|slice:":5" %}
-                                    <tr>
-                                        <td>Évaluation</td>
-                                        <td>{{ eval.cours.libelle }} – {{ eval.lib }}</td>
-                                        <td>{% if eval.published_at %}{{ eval.published_at|date:"d/m/Y" }}{% else %}-{% endif %}</td>
-                                        <td class="text-end">
-                                            {% if eval.is_published %}
-                                                <span class="badge bg-success">Publiée</span>
-                                            {% else %}
-                                                <span class="badge bg-warning text-dark">Brouillon</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="4" class="text-center py-4 text-muted">Aucune évaluation disponible.</td></tr>
-                                    {% endfor %}
+                                <span class="badge-2024 badge-secondary-2024">Brouillon</span>
                                 {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4">
-            <div class="card card-soft border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Aperçu rapide</h5>
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="text-muted">Filières dirigées</span>
-                            <strong>{{ filieres_count }}</strong>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ filieres_count|default:0 }}%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="text-muted">Évaluations non publiées</span>
-                            <strong>{{ unpublished_evaluations_count }}</strong>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ unpublished_evaluations_count|default:0 }}%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <p class="mb-2 text-muted">Dernière mise à jour</p>
-                        <p class="fw-semibold mb-0">{{ now|date:"d/m/Y H:i" }}</p>
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">Aucune évaluation récente</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Chart.js avec configuration ultra-moderne -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const dashboardLabels = {{ chart_labels|default:'[]'|safe }};
-    const dashboardData = {{ chart_data|default:'[]'|safe }};
-    const secondaryData = {{ chart_published_status|default:'[]'|safe }};
+document.addEventListener('DOMContentLoaded', function() {
+    const promotions = JSON.parse('{{ promotions_data|escapejs }}');
+    const studentsCount = JSON.parse('{{ students_count_data|escapejs }}');
 
-    const dashboardCtx = document.getElementById('dashboardChart');
-    if (dashboardCtx) {
-        new Chart(dashboardCtx, {
-            type: 'bar',
-            data: {
-                labels: dashboardLabels,
-                datasets: [{
-                    label: 'Moyenne',
-                    data: dashboardData,
-                    backgroundColor: 'rgba(13, 59, 102, 0.85)',
-                    borderRadius: 12,
-                    borderSkipped: false,
-                }]
+    // Palette de couleurs 2024
+    const colors = [
+        { bg: 'rgba(79, 70, 229, 0.8)', border: 'rgba(79, 70, 229, 1)' },
+        { bg: 'rgba(16, 185, 129, 0.8)', border: 'rgba(16, 185, 129, 1)' },
+        { bg: 'rgba(245, 158, 11, 0.8)', border: 'rgba(245, 158, 11, 1)' },
+        { bg: 'rgba(239, 68, 68, 0.8)', border: 'rgba(239, 68, 68, 1)' },
+        { bg: 'rgba(8, 145, 178, 0.8)', border: 'rgba(8, 145, 178, 1)' },
+        { bg: 'rgba(147, 51, 234, 0.8)', border: 'rgba(147, 51, 234, 1)' },
+        { bg: 'rgba(236, 72, 153, 0.8)', border: 'rgba(236, 72, 153, 1)' },
+        { bg: 'rgba(34, 197, 94, 0.8)', border: 'rgba(34, 197, 94, 1)' }
+    ];
+
+    const ctx = document.getElementById('modernChart').getContext('2d');
+
+    // Gradient pour le fond
+    const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.1)');
+    gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: promotions,
+            datasets: [{
+                label: 'Étudiants',
+                data: studentsCount,
+                backgroundColor: colors.map(c => c.bg),
+                borderColor: colors.map(c => c.border),
+                borderWidth: 2,
+                borderRadius: 10,
+                borderSkipped: false,
+                barPercentage: 0.7,
+                categoryPercentage: 0.8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                    padding: 12,
+                    titleFont: { size: 14, weight: '600' },
+                    bodyFont: { size: 13 },
+                    borderColor: 'rgba(79, 70, 229, 0.2)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' étudiants';
+                        }
+                    }
+                }
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { mode: 'index', intersect: false }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.04)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        stepSize: 1,
+                        font: { size: 12, weight: '500' },
+                        color: '#6b7280',
+                        padding: 8
+                    }
                 },
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true }
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 12, weight: '500' },
+                        color: '#6b7280',
+                        padding: 10
+                    }
                 }
             }
-        });
-    }
+        },
+        plugins: [{
+            beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                const chartArea = chart.chartArea;
 
-    const secondaryCtx = document.getElementById('secondaryChart');
-    if (secondaryCtx) {
-        const labels = secondaryData.map(item => item.label);
-        const values = secondaryData.map(item => item.value);
-        new Chart(secondaryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: ['#0d6efd', '#ffc107', '#198754', '#6c757d'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
+                ctx.save();
+                ctx.fillStyle = gradient;
+                ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+                ctx.restore();
             }
-        });
-    }
+        }]
+    });
+});
 </script>
 {% endblock %}
+<task_progress>
+- [x] Lire le fichier config/settings.py
+- [x] Analyser le contenu du fichier
+- [x] Modifier la langue et le fuseau horaire
+- [x] Lire les modèles de données
+- [x] Lire les vues existantes
+- [x] Créer une vue pour le dashboard
+- [x] Ajouter une URL pour le dashboard
+- [x] Créer un dashboard avec les éléments importants
+- [x] Moderniser le design et les couleurs
+</task_progress>
+</write_to_file>
