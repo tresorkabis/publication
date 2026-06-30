@@ -68,6 +68,9 @@ def dashboard(request):
     total_students = Etudiant.objects.count()
     total_staff = Personnel.objects.count()
     total_filieres = Filiere.objects.count()
+    total_evaluations = Evaluation.objects.count()
+    total_published_evaluations = Evaluation.objects.filter(is_published=True).count()
+    pending_validations_count = User.objects.filter(is_active=False, is_validated=False).count()
 
     # Données pour le graphique des étudiants par promotion
     promotions_data = list(Promotion.objects.values_list('libnom', flat=True))
@@ -86,6 +89,9 @@ def dashboard(request):
         'total_students': total_students,
         'total_staff': total_staff,
         'total_filieres': total_filieres,
+        'total_evaluations': total_evaluations,
+        'total_published_evaluations': total_published_evaluations,
+        'pending_validations_count': pending_validations_count,
         'promotions_data': json.dumps(promotions_data),
         'students_count_data': json.dumps(students_count_data),
         'recent_inscriptions': recent_inscriptions,

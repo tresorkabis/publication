@@ -112,13 +112,22 @@
 
         <form method="post">
             {% csrf_token %}
-            <div class="form-floating">
-                <input type="text" name="username" id="id_username" class="form-control" placeholder="Nom d'utilisateur" required>
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="form-floating mb-3">
+                <input type="text" name="username" id="id_username" class="form-control" placeholder="Nom d'utilisateur" required value="{{ form.username.value|default:'' }}">
                 <label for="id_username"><i class="far fa-user me-2"></i>Nom d'utilisateur</label>
+                {% if form.username.errors %}
+                    <div class="text-danger mt-1">{{ form.username.errors|striptags }}</div>
+                {% endif %}
             </div>
-            <div class="form-floating">
+            <div class="form-floating mb-3">
                 <input type="password" name="password" id="id_password" class="form-control" placeholder="Mot de passe" required>
                 <label for="id_password"><i class="fas fa-lock me-2"></i>Mot de passe</label>
+                {% if form.password.errors %}
+                    <div class="text-danger mt-1">{{ form.password.errors|striptags }}</div>
+                {% endif %}
             </div>
             <button type="submit" class="btn-login">
                 <i class="fas fa-arrow-right-to-bracket me-2"></i>Se connecter
