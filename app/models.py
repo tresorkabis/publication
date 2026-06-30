@@ -110,19 +110,13 @@ class Etudiant(models.Model):
     def __str__(self):
         return f"Etudiant: {self.user.last_name} ({self.matricule or 'N/A'})"
 
-class ChefFiliere(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    grade = models.CharField(max_length=100, blank=True, null=True)
-
-    def __str__(self):
-        return f"Chef Filière: {self.user.last_name}"
 
 class Filiere(models.Model):
     idfiliere = models.AutoField(primary_key=True)
     codfiliere = models.CharField(max_length=20)
     libelle = models.CharField(max_length=100)
     descript = models.TextField(blank=True, null=True)
-    chef = models.ForeignKey(ChefFiliere, on_delete=models.SET_NULL, null=True, blank=True, related_name='filieres_dirigees')
+    chef = models.ForeignKey(Personnel, on_delete=models.SET_NULL, null=True, blank=True, related_name='filieres_dirigees')
 
     def __str__(self):
         return self.libelle

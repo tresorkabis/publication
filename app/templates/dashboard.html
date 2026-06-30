@@ -1,164 +1,254 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">Bienvenue, {{ user.nom }} {{ user.postnom }} {{ user.prenom }}</h1>
-    <p class="text-gray-500">Tableau de bord de l'ESFORCA</p>
-</div>
-
-<div class="grid md:grid-cols-4 gap-6">
-    <div class="md:col-span-1">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="bg-blue-900 p-4 text-white">
-                <h3 class="font-bold">Profil</h3>
-            </div>
-            <div class="p-4 space-y-4">
-                <div class="text-center mb-4">
-                    {% if user.photo %}
-                        <img src="{{ user.photo.url }}" alt="Photo de profil" class="w-32 h-32 rounded-full mx-auto object-cover border-4 border-blue-100 shadow-sm">
-                    {% else %}
-                        <div class="w-32 h-32 bg-gray-200 rounded-full mx-auto flex items-center justify-center text-gray-400 border-4 border-white shadow-sm">
-                            <i class="fas fa-user text-5xl"></i>
+<div class="container-xl py-5">
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card card-soft border-0 shadow-sm overflow-hidden">
+                <div class="row g-0 align-items-center">
+                    <div class="col-md-7 p-5 bg-gradient-primary text-white">
+                        <div class="mb-3 text-uppercase small opacity-75">Tableau de bord</div>
+                        <h2 class="display-6 fw-bold mb-3">Bonjour {{ user.prenom }} {{ user.nom }} !</h2>
+                        <p class="mb-0 opacity-85">Vos indicateurs clés sont consolidés ici. Suivez les tendances, publiez les évaluations et gérez vos filières efficacement.</p>
+                    </div>
+                    <div class="col-md-5 p-5">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div>
+                                <div class="text-uppercase text-muted small">Rôle</div>
+                                <div class="h5 fw-bold">{% if is_student %}Étudiant{% elif is_chef %}Chef de filière{% elif is_staff %}Personnel{% else %}Utilisateur{% endif %}</div>
+                            </div>
+                            <i class="fas fa-tachometer-alt fa-3x text-primary"></i>
                         </div>
-                    {% endif %}
-                    
-                    <form action="{% url 'upload_photo' %}" method="post" enctype="multipart/form-data" class="mt-3">
-                        {% csrf_token %}
-                        <label class="cursor-pointer bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-blue-100 transition">
-                            <i class="fas fa-camera mr-1"></i> Changer photo
-                            <input type="file" name="photo" class="hidden" onchange="this.form.submit()">
-                        </label>
-                    </form>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded-3 p-3">
+                                    <div class="text-muted small">Dernière connexion</div>
+                                    <div class="fw-semibold">{{ user.last_login|date:"d/m/Y H:i"|default:"N/A" }}</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded-3 p-3">
+                                    <div class="text-muted small">Email</div>
+                                    <div class="fw-semibold text-truncate">{{ user.email }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase font-bold">Matricule</p>
-                    <p class="font-medium text-gray-800">{{ user.matricule|default:"N/A" }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase font-bold">Type de compte</p>
-                    <p class="font-medium text-gray-800">
-                        {% if is_student %}Étudiant{% elif is_staff %}Personnel{% elif is_chef %}Chef de Filière{% else %}Étudiant{% endif %}
-                    </p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase font-bold">Email</p>
-                    <p class="font-medium text-gray-800 text-sm">{{ user.email }}</p>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card card-soft border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Actions rapides</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'results_list' %}" class="list-group-item list-group-item-action">Voir mes résultats</a>
+                        {% if is_staff or is_chef %}
+                        <a href="{% url 'filiere_list' %}" class="list-group-item list-group-item-action">Gérer les filières</a>
+                        <a href="{% url 'dashboard' %}?focus=evaluations" class="list-group-item list-group-item-action">Voir les évaluations</a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="md:col-span-3 space-y-6">
-        {% if is_student %}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Mes Inscriptions Récentes</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
-                            <th class="p-3 border-b">Promotion</th>
-                            <th class="p-3 border-b">Filière</th>
-                            <th class="p-3 border-b">Année</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ins in inscriptions %}
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="p-3 border-b">{{ ins.promotion.libnom }}</td>
-                            <td class="p-3 border-b">{{ ins.promotion.filiere.libelle }}</td>
-                            <td class="p-3 border-b">{{ ins.annee }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="p-3 text-center text-gray-500 italic">Aucune inscription trouvée.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="row g-3 mb-4">
+        {% for metric in dashboard_metrics %}
+        <div class="col-sm-6 col-xl-3">
+            <div class="card metric-card p-4 border-0 text-dark h-100">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-uppercase text-muted mb-1">{{ metric.title }}</h6>
+                        <div class="h3 fw-bold">{{ metric.value }}</div>
+                    </div>
+                    <div class="icon-shape bg-{{ metric.color }} text-white shadow-sm">
+                        <i class="fas {{ metric.icon }}"></i>
+                    </div>
+                </div>
+                <div class="text-muted small">Vue rapide sur votre performance.</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card card-soft border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <h5 class="card-title mb-1">Tendances principales</h5>
+                            <p class="text-muted small mb-0">Moyennes par cours.</p>
+                        </div>
+                        <span class="badge bg-primary">Live</span>
+                    </div>
+                    <canvas id="dashboardChart"></canvas>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Derniers Résultats</h2>
-                <a href="{% url 'results_list' %}" class="text-blue-600 text-sm font-medium hover:underline">Voir tout</a>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
-                            <th class="p-3 border-b">Cours</th>
-                            <th class="p-3 border-b">Évaluation</th>
-                            <th class="p-3 border-b">Note</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cot in cotations|slice:":5" %}
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="p-3 border-b">{{ cot.evaluation.cours.libelle }}</td>
-                            <td class="p-3 border-b">{{ cot.evaluation.lib }}</td>
-                            <td class="p-3 border-b font-bold text-blue-700">{{ cot.note }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="p-3 text-center text-gray-500 italic">Aucun résultat publié pour le moment.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="col-lg-6">
+            <div class="card card-soft border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <h5 class="card-title mb-1">État des évaluations</h5>
+                            <p class="text-muted small mb-0">Répartition par statut.</p>
+                        </div>
+                        <span class="badge bg-info">Synthèse</span>
+                    </div>
+                    <canvas id="secondaryChart"></canvas>
+                </div>
             </div>
         </div>
-        {% endif %}
+    </div>
 
-        {% if is_staff or is_chef %}
-        {% if is_chef %}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Mes Filières</h2>
-            <div class="flex flex-wrap gap-2">
-                {% for filiere in filieres %}
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {{ filiere.libelle }} ({{ filiere.codfiliere }})
-                </span>
-                {% empty %}
-                <p class="text-gray-500 italic">Aucune filière assignée.</p>
-                {% endfor %}
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card card-soft border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Dernières activités</h5>
+                        <small class="text-muted">Aperçu récent des éléments clés.</small>
+                    </div>
+                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">Actualiser</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light text-uppercase small">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Détail</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if is_student %}
+                                    {% for cot in cotations|slice:":5" %}
+                                    <tr>
+                                        <td>Note publiée</td>
+                                        <td>{{ cot.evaluation.cours.libelle }} – {{ cot.evaluation.lib }}</td>
+                                        <td>{{ cot.evaluation.published_at|date:"d/m/Y" }}</td>
+                                        <td class="text-end text-success">Publiée</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="4" class="text-center py-4 text-muted">Aucune note publiée pour le moment.</td></tr>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for eval in evaluations|slice:":5" %}
+                                    <tr>
+                                        <td>Évaluation</td>
+                                        <td>{{ eval.cours.libelle }} – {{ eval.lib }}</td>
+                                        <td>{% if eval.published_at %}{{ eval.published_at|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                                        <td class="text-end">
+                                            {% if eval.is_published %}
+                                                <span class="badge bg-success">Publiée</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Brouillon</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="4" class="text-center py-4 text-muted">Aucune évaluation disponible.</td></tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-        {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Gestion des Évaluations {% if is_chef %}(Mes Filières){% endif %}</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
-                            <th class="p-3 border-b">Cours</th>
-                            <th class="p-3 border-b">Évaluation</th>
-                            <th class="p-3 border-b">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for eval in evaluations %}
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="p-3 border-b">{{ eval.cours.libelle }}</td>
-                            <td class="p-3 border-b">{{ eval.lib }}</td>
-                            <td class="p-3 border-b">
-                                <div class="flex space-x-2">
-                                    <a href="{% url 'enter_marks' eval.idevaluation %}" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700">Saisir</a>
-                                    <a href="{% url 'manage_marks' eval.idevaluation %}" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700">Gérer</a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="p-3 text-center text-gray-500 italic">Aucune évaluation disponible.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="col-xl-4">
+            <div class="card card-soft border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Aperçu rapide</h5>
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted">Filières dirigées</span>
+                            <strong>{{ filieres_count }}</strong>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ filieres_count|default:0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted">Évaluations non publiées</span>
+                            <strong>{{ unpublished_evaluations_count }}</strong>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ unpublished_evaluations_count|default:0 }}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="mb-2 text-muted">Dernière mise à jour</p>
+                        <p class="fw-semibold mb-0">{{ now|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
+
+<script>
+    const dashboardLabels = {{ chart_labels|default:'[]'|safe }};
+    const dashboardData = {{ chart_data|default:'[]'|safe }};
+    const secondaryData = {{ chart_published_status|default:'[]'|safe }};
+
+    const dashboardCtx = document.getElementById('dashboardChart');
+    if (dashboardCtx) {
+        new Chart(dashboardCtx, {
+            type: 'bar',
+            data: {
+                labels: dashboardLabels,
+                datasets: [{
+                    label: 'Moyenne',
+                    data: dashboardData,
+                    backgroundColor: 'rgba(13, 59, 102, 0.85)',
+                    borderRadius: 12,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    const secondaryCtx = document.getElementById('secondaryChart');
+    if (secondaryCtx) {
+        const labels = secondaryData.map(item => item.label);
+        const values = secondaryData.map(item => item.value);
+        new Chart(secondaryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ['#0d6efd', '#ffc107', '#198754', '#6c757d'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+</script>
 {% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ model_name }}</h1>
+            <p class="text-sm text-gray-500">Liste des {{ model_name|lower }} disponibles.</p>
+        </div>
+        {% if create_url_name %}
+            <a href="{% url create_url_name %}" class="bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-800">Ajouter</a>
+        {% endif %}
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
+                    {% for field in object_list.model._meta.fields %}
+                        <th class="p-3 border-b">{{ field.verbose_name|title }}</th>
+                    {% endfor %}
+                    <th class="p-3 border-b">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in object_list %}
+                    <tr class="hover:bg-gray-50 transition">
+                        {% for field in obj._meta.fields %}
+                            <td class="p-3 border-b">{{ getattr(obj, field.name) }}</td>
+                        {% endfor %}
+                        <td class="p-3 border-b">
+                            <div class="flex flex-wrap gap-2">
+                                {% if update_url_name %}
+                                    <a href="{% url update_url_name obj.pk %}" class="bg-yellow-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-yellow-600">Modifier</a>
+                                {% endif %}
+                                {% if delete_url_name %}
+                                    <a href="{% url delete_url_name obj.pk %}" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-700">Supprimer</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ object_list.model._meta.fields|length|add:'1' }}" class="p-3 text-center text-gray-500 italic">Aucun élément trouvé.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

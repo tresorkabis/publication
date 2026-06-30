@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-4">Supprimer {{ singular_name }}</h1>
+    <p class="text-gray-600 mb-6">Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.</p>
+    <div class="bg-gray-50 p-4 rounded-xl mb-6">
+        <strong class="block text-gray-800">{{ object }}</strong>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="flex gap-3">
+            <button type="submit" class="bg-red-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-red-700 transition">Supprimer</button>
+            <a href="{% url list_url_name %}" class="bg-gray-200 text-gray-700 px-5 py-3 rounded-xl font-semibold hover:bg-gray-300 transition">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

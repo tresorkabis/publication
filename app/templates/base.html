@@ -4,91 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESFORCA - Résultats</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; } 
+        body { font-family: 'Inter', sans-serif; background: #f6f8fb; }
+        .navbar-custom { background: linear-gradient(135deg, #0d3b66 0%, #1c6ca8 100%); }
+        .navbar-custom .nav-link, .navbar-custom .navbar-brand, .navbar-custom .btn { color: rgba(255,255,255,0.95); }
+        .navbar-custom .nav-link:hover, .navbar-custom .btn:hover { color: #ffffff; }
+        .bg-gradient-primary { background: linear-gradient(135deg, rgba(13,59,102,.92), rgba(17,83,156,.95)); }
+        .card-soft { background: rgba(255,255,255,0.94); box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08); border: none; }
+        .metric-card { border-radius: 1.5rem; min-height: 130px; box-shadow: 0 18px 50px rgba(15,23,42,.06); }
+        .metric-card .icon-shape { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; }
+        .dashboard-section { border-radius: 1.85rem; }
+        .table thead th { border-bottom: 2px solid #edf2f7; }
+        .table-hover tbody tr:hover { background-color: rgba(13, 59, 102, 0.05); }
+        .btn-glow { box-shadow: 0 12px 30px rgba(13,59,102,.12); }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
-    <nav class="bg-blue-900 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center">
-                    <a href="{% url 'home' %}" class="text-xl font-bold tracking-wider">ESFORCA</a>
-                </div>
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-button" class="text-white focus:outline-none">
-                        <i class="fas fa-bars text-2xl"></i>
-                    </button>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Tableau de bord</a>
-                            <a href="{% url 'results_list' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Mes Résultats</a>
-                            <a href="{% url 'profile' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Profil</a>
-                            {% if user.is_staff %}
-                                <a href="/admin/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Administration</a>
-                                <a href="{% url 'pending_validations' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Validations</a>
-                            {% endif %}
-                            <form action="{% url 'logout' %}" method="post" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700">Déconnexion</button>
-                            </form>
-                        {% else %}
-                            <a href="{% url 'register' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Inscription</a>
-                            <a href="{% url 'login' %}" class="bg-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition">Connexion</a>
+<body class="bg-light min-vh-100 d-flex flex-column">
+    <nav class="navbar navbar-expand-md navbar-dark navbar-custom shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'home' %}">ESFORCA</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Tableau de bord</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'results_list' %}">Mes Résultats</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profil</a></li>
+                        {% if user.is_staff %}
+                            <li class="nav-item"><a class="nav-link" href="/admin/">Administration</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'pending_validations' %}">Validations</a></li>
                         {% endif %}
-                    </div>
-                </div>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" class="d-flex">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-light btn-sm ms-md-3">Déconnexion</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Inscription</a></li>
+                        <li class="nav-item"><a class="btn btn-light btn-sm ms-md-3" href="{% url 'login' %}">Connexion</a></li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-blue-800 px-4 py-3 space-y-2">
-            {% if user.is_authenticated %}
-                <a href="{% url 'dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Tableau de bord</a>
-                <a href="{% url 'results_list' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Mes Résultats</a>
-                <a href="{% url 'profile' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Profil</a>
-                {% if user.is_staff %}
-                    <a href="/admin/" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Administration</a>
-                {% endif %}
-                <form action="{% url 'logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-red-700">Déconnexion</button>
-                </form>
-            {% else %}
-                <a href="{% url 'register' %}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700">Inscription</a>
-                <a href="{% url 'login' %}" class="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 hover:bg-blue-500">Connexion</a>
-            {% endif %}
-        </div>
     </nav>
-    <script>
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
-            var menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        });
-    </script>
 
     <main class="flex-grow">
-        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="container py-5">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    <div class="mb-4 rounded-3 p-4 {% if message.tags == 'error' %}alert alert-danger{% else %}alert alert-success{% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
-            
             {% block content %}{% endblock %}
         </div>
     </main>
 
-    <footer class="bg-white border-t mt-auto py-6">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+    <footer class="bg-white border-top mt-auto py-4">
+        <div class="container text-center text-muted small">
             &copy; 2026 ESFORCA. Tous droits réservés.
         </div>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

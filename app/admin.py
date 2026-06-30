@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Role, UtilisateurRole, Fonction, Personnel, Etudiant, ChefFiliere, Filiere, Promotion, Inscription, Semestre, Cours, TypeEvaluation, Evaluation, Cotation
+from .models import User, Role, UtilisateurRole, Fonction, Personnel, Etudiant, Filiere, Promotion, Inscription, Semestre, Cours, TypeEvaluation, Evaluation, Cotation
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -22,7 +22,6 @@ admin.site.register(UtilisateurRole)
 admin.site.register(Fonction)
 admin.site.register(Personnel)
 admin.site.register(Etudiant)
-admin.site.register(ChefFiliere)
 admin.site.register(Filiere)
 admin.site.register(Promotion)
 admin.site.register(Inscription)

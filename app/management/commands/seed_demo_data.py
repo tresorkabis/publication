@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from app.models import (
-    Role, UtilisateurRole, Fonction, Personnel, Etudiant, ChefFiliere,
+    Role, UtilisateurRole, Fonction, Personnel, Etudiant,
     Filiere, Promotion, Inscription, Semestre, Cours, TypeEvaluation,
     Evaluation, Cotation
 )
@@ -86,12 +86,18 @@ class Command(BaseCommand):
         else:
             admin_user = User.objects.get(email=chef_email)
         
+        chef_role, _ = Role.objects.get_or_create(libelle='chef de filière')
+        chef_personnel, _ = Personnel.objects.get_or_create(
+            user=admin_user,
+            defaults={'fonction': None, 'grade': 'Chef de filière'}
+        )
+        UtilisateurRole.objects.get_or_create(user=admin_user, role=chef_role)
+
         for f in filieres:
-            chef = ChefFiliere.objects.create(user=admin_user)
             Filiere.objects.create(
                 codfiliere=f['code'],
                 libelle=f['libelle'],
-                chef=chef
+                chef=chef_personnel
             )
 
     def create_promotions(self):

@@ -1,5 +1,11 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.db.models import Count, Q
 from .models import *
 from .forms import UserRegistrationForm, UserProfileForm
 from django.contrib.auth import login, authenticate
@@ -58,39 +64,108 @@ def profile(request):
 @login_required
 def dashboard(request):
     user = request.user
-    context = {}
+    context = {
+        'inscriptions': [],
+        'cotations': [],
+        'filieres': [],
+        'evaluations': [],
+        'unpublished_evaluations': [],
+        'inscriptions_count': 0,
+        'cotations_count': 0,
+        'filieres_count': 0,
+        'evaluations_count': 0,
+        'unpublished_evaluations_count': 0,
+        'dashboard_metrics': [],
+        'chart_labels': [],
+        'chart_data': [],
+        'chart_published_status': [],
+        'now': timezone.now(),
+    }
+
     if hasattr(user, 'etudiant'):
         context['is_student'] = True
         context['etudiant'] = user.etudiant
-        context['inscriptions'] = Inscription.objects.filter(etudiant=user.etudiant)
-        context['cotations'] = Cotation.objects.filter(
+
+        inscriptions = Inscription.objects.filter(etudiant=user.etudiant).select_related('promotion__filiere')
+        cotations = Cotation.objects.filter(
             etudiant=user.etudiant,
             evaluation__is_published=True
         ).select_related('evaluation', 'evaluation__cours')
+
+        context['inscriptions'] = inscriptions
+        context['cotations'] = cotations
+        context['inscriptions_count'] = inscriptions.count()
+        context['cotations_count'] = cotations.count()
+
+        context['dashboard_metrics'] = [
+            {'title': 'Inscriptions', 'value': inscriptions.count(), 'icon': 'fa-user-graduate', 'color': 'primary'},
+            {'title': 'Résultats publiés', 'value': cotations.count(), 'icon': 'fa-chart-line', 'color': 'success'},
+            {'title': 'Filières actives', 'value': inscriptions.values('promotion__filiere').distinct().count(), 'icon': 'fa-building-columns', 'color': 'info'},
+        ]
+
+        course_labels = []
+        course_averages = []
+        for course in cotations.values_list('evaluation__cours__libelle', flat=True).distinct():
+            student_course_notes = cotations.filter(evaluation__cours__libelle=course).values_list('note', flat=True)
+            notes = [float(n) for n in student_course_notes if n is not None]
+            if notes:
+                course_labels.append(course)
+                course_averages.append(sum(notes) / len(notes))
+
+        context['chart_labels'] = json.dumps(course_labels)
+        context['chart_data'] = json.dumps(course_averages)
+        context['chart_published_status'] = json.dumps([
+            {'label': 'Publié', 'value': cotations.count()},
+            {'label': 'En attente', 'value': max(inscriptions.count() - cotations.count(), 0)},
+        ])
+
     elif hasattr(user, 'personnel'):
         context['is_staff'] = True
         context['personnel'] = user.personnel
-        # Pour le personnel, on montre les évaluations qu'ils peuvent gérer
-        context['evaluations'] = Evaluation.objects.all().select_related('cours', 'type_eval')
-    else:
-        # Chef de filière
-        from .models import ChefFiliere
-        try:
-            chef = ChefFiliere.objects.get(user=user)
-        except ChefFiliere.DoesNotExist:
-            chef = None
 
-        if chef is not None:
+        evaluations = Evaluation.objects.select_related('cours', 'type_eval')
+        context['evaluations'] = evaluations
+        context['evaluations_count'] = evaluations.count()
+
+        total_students = Etudiant.objects.count()
+        total_filieres = Filiere.objects.count()
+        total_evaluations = evaluations.count()
+        total_published = Evaluation.objects.filter(is_published=True).count()
+        total_unpublished = Evaluation.objects.filter(is_published=False).count()
+
+        context['dashboard_metrics'] = [
+            {'title': 'Étudiants', 'value': total_students, 'icon': 'fa-users', 'color': 'primary'},
+            {'title': 'Filières', 'value': total_filieres, 'icon': 'fa-building-columns', 'color': 'info'},
+            {'title': 'Évaluations publiées', 'value': total_published, 'icon': 'fa-check-circle', 'color': 'success'},
+            {'title': 'Évaluations en attente', 'value': total_unpublished, 'icon': 'fa-hourglass-half', 'color': 'warning'},
+        ]
+
+        eval_type_counts = Evaluation.objects.values('type_eval__libelle').annotate(count=Count('id')).order_by('-count')
+        context['chart_labels'] = json.dumps([item['type_eval__libelle'] for item in eval_type_counts])
+        context['chart_data'] = json.dumps([item['count'] for item in eval_type_counts])
+
+        context['chart_published_status'] = json.dumps([
+            {'label': 'Publiées', 'value': total_published},
+            {'label': 'Non publiées', 'value': total_unpublished},
+        ])
+
+        if user.has_role('chef de filière'):
             context['is_chef'] = True
-            context['chef'] = chef
-            context['filieres'] = chef.filieres_dirigees.all()
-            # Un chef peut voir toutes les évaluations des filières qu'il dirige
-            context['evaluations'] = Evaluation.objects.filter(cours__filiere__in=context['filieres']).select_related('cours', 'type_eval')
-            context['unpublished_evaluations'] = Evaluation.objects.filter(
-                cours__filiere__in=context['filieres'],
+            context['chef'] = user.personnel
+            filieres = user.personnel.filieres_dirigees.all()
+            evaluations = evaluations.filter(cours__filiere__in=filieres)
+            unpublished_evaluations = Evaluation.objects.filter(
+                cours__filiere__in=filieres,
                 is_published=False,
                 cotation__isnull=False
             ).distinct().select_related('cours')
+            context['filieres'] = filieres
+            context['evaluations'] = evaluations
+            context['unpublished_evaluations'] = unpublished_evaluations
+            context['filieres_count'] = filieres.count()
+            context['evaluations_count'] = evaluations.count()
+            context['unpublished_evaluations_count'] = unpublished_evaluations.count()
+
     return render(request, 'dashboard.html', context)
 
 @login_required
@@ -128,7 +203,7 @@ def results_list(request):
 
 @login_required
 def enter_marks(request, evaluation_id):
-    if not (hasattr(request.user, 'personnel') or hasattr(request.user, 'cheffiliere')):
+    if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
     
@@ -170,7 +245,7 @@ def print_results(request):
 
 @login_required
 def edit_mark(request, cotation_id):
-    if not (hasattr(request.user, 'personnel') or hasattr(request.user, 'cheffiliere')):
+    if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
     
@@ -187,7 +262,7 @@ def edit_mark(request, cotation_id):
 
 @login_required
 def delete_mark(request, cotation_id):
-    if not (hasattr(request.user, 'personnel') or hasattr(request.user, 'cheffiliere')):
+    if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
     
@@ -199,7 +274,7 @@ def delete_mark(request, cotation_id):
 
 @login_required
 def manage_marks(request, evaluation_id):
-    if not (hasattr(request.user, 'personnel') or hasattr(request.user, 'cheffiliere')):
+    if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
         return redirect('dashboard')
     
@@ -212,18 +287,15 @@ def manage_marks(request, evaluation_id):
 
 @login_required
 def publish_evaluation(request, evaluation_id):
-    from .models import ChefFiliere
-
-    try:
-        chef = ChefFiliere.objects.get(user=request.user)
-    except ChefFiliere.DoesNotExist:
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au chef de filière.")
         return redirect('dashboard')
 
+    chef_personnel = request.user.personnel
     evaluation = get_object_or_404(
         Evaluation,
         pk=evaluation_id,
-        cours__filiere__in=chef.filieres_dirigees.all()
+        cours__filiere__in=chef_personnel.filieres_dirigees.all()
     )
 
     if request.method == 'POST':
@@ -238,3 +310,242 @@ def publish_evaluation(request, evaluation_id):
         return redirect('manage_marks', evaluation_id=evaluation_id)
 
     return render(request, 'results/publish_evaluation.html', {'evaluation': evaluation})
+
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        messages.error(self.request, "Accès réservé au personnel.")
+        return redirect('dashboard')
+
+
+class BaseCRUDListView(StaffRequiredMixin, ListView):
+    template_name = 'crud/list.html'
+    context_object_name = 'object_list'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', self.model._meta.verbose_name_plural.title()),
+            'singular_name': getattr(self, 'singular_name', self.model._meta.verbose_name.title()),
+            'create_url_name': getattr(self, 'create_url_name', ''),
+            'update_url_name': getattr(self, 'update_url_name', ''),
+            'delete_url_name': getattr(self, 'delete_url_name', ''),
+        })
+        return context
+
+
+class BaseCRUDFormView(StaffRequiredMixin):
+    template_name = 'crud/form.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', self.model._meta.verbose_name.title()),
+            'action': getattr(self, 'action', 'Enregistrer'),
+        })
+        return context
+
+
+class BaseCRUDCreateView(BaseCRUDFormView, CreateView):
+    pass
+
+
+class BaseCRUDUpdateView(BaseCRUDFormView, UpdateView):
+    pass
+
+
+class BaseCRUDDeleteView(StaffRequiredMixin, DeleteView):
+    template_name = 'crud/confirm_delete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', self.model._meta.verbose_name.title()),
+            'singular_name': getattr(self, 'singular_name', self.model._meta.verbose_name.title()),
+            'list_url_name': getattr(self, 'list_url_name', ''),
+        })
+        return context
+
+
+class FiliereListView(BaseCRUDListView):
+    model = Filiere
+    model_name = 'Filières'
+    singular_name = 'Filière'
+    create_url_name = 'filiere_create'
+    update_url_name = 'filiere_update'
+    delete_url_name = 'filiere_delete'
+
+
+class FiliereCreateView(BaseCRUDCreateView):
+    model = Filiere
+    fields = ['codfiliere', 'libelle', 'descript', 'chef']
+    success_url = reverse_lazy('filiere_list')
+    model_name = 'Filière'
+    action = 'Ajouter'
+
+
+class FiliereUpdateView(BaseCRUDUpdateView):
+    model = Filiere
+    fields = ['codfiliere', 'libelle', 'descript', 'chef']
+    success_url = reverse_lazy('filiere_list')
+    model_name = 'Filière'
+    action = 'Modifier'
+
+
+class FiliereDeleteView(BaseCRUDDeleteView):
+    model = Filiere
+    success_url = reverse_lazy('filiere_list')
+    model_name = 'Filière'
+    singular_name = 'Filière'
+    list_url_name = 'filiere_list'
+
+
+class PromotionListView(BaseCRUDListView):
+    model = Promotion
+    model_name = 'Promotions'
+    singular_name = 'Promotion'
+    create_url_name = 'promotion_create'
+    update_url_name = 'promotion_update'
+    delete_url_name = 'promotion_delete'
+
+
+class PromotionCreateView(BaseCRUDCreateView):
+    model = Promotion
+    fields = ['filiere', 'libnom', 'annee', 'niveau']
+    success_url = reverse_lazy('promotion_list')
+    model_name = 'Promotion'
+    action = 'Ajouter'
+
+
+class PromotionUpdateView(BaseCRUDUpdateView):
+    model = Promotion
+    fields = ['filiere', 'libnom', 'annee', 'niveau']
+    success_url = reverse_lazy('promotion_list')
+    model_name = 'Promotion'
+    action = 'Modifier'
+
+
+class PromotionDeleteView(BaseCRUDDeleteView):
+    model = Promotion
+    success_url = reverse_lazy('promotion_list')
+    model_name = 'Promotion'
+    singular_name = 'Promotion'
+    list_url_name = 'promotion_list'
+
+
+class CoursListView(BaseCRUDListView):
+    model = Cours
+    model_name = 'Cours'
+    singular_name = 'Cours'
+    create_url_name = 'cours_create'
+    update_url_name = 'cours_update'
+    delete_url_name = 'cours_delete'
+
+
+class CoursCreateView(BaseCRUDCreateView):
+    model = Cours
+    fields = ['filiere', 'semestre', 'codcours', 'libelle']
+    success_url = reverse_lazy('cours_list')
+    model_name = 'Cours'
+    action = 'Ajouter'
+
+
+class CoursUpdateView(BaseCRUDUpdateView):
+    model = Cours
+    fields = ['filiere', 'semestre', 'codcours', 'libelle']
+    success_url = reverse_lazy('cours_list')
+    model_name = 'Cours'
+    action = 'Modifier'
+
+
+class CoursDeleteView(BaseCRUDDeleteView):
+    model = Cours
+    success_url = reverse_lazy('cours_list')
+    model_name = 'Cours'
+    singular_name = 'Cours'
+    list_url_name = 'cours_list'
+
+
+class TypeEvaluationListView(BaseCRUDListView):
+    model = TypeEvaluation
+    model_name = 'Types d\'évaluation'
+    singular_name = 'Type d\'évaluation'
+    create_url_name = 'typeevaluation_create'
+    update_url_name = 'typeevaluation_update'
+    delete_url_name = 'typeevaluation_delete'
+
+
+class TypeEvaluationCreateView(BaseCRUDCreateView):
+    model = TypeEvaluation
+    fields = ['libelle', 'descript']
+    success_url = reverse_lazy('typeevaluation_list')
+    model_name = 'Type d\'évaluation'
+    action = 'Ajouter'
+
+
+class TypeEvaluationUpdateView(BaseCRUDUpdateView):
+    model = TypeEvaluation
+    fields = ['libelle', 'descript']
+    success_url = reverse_lazy('typeevaluation_list')
+    model_name = 'Type d\'évaluation'
+    action = 'Modifier'
+
+
+class TypeEvaluationDeleteView(BaseCRUDDeleteView):
+    model = TypeEvaluation
+    success_url = reverse_lazy('typeevaluation_list')
+    model_name = 'Type d\'évaluation'
+    singular_name = 'Type d\'évaluation'
+    list_url_name = 'typeevaluation_list'
+
+
+class EvaluationListView(BaseCRUDListView):
+    model = Evaluation
+    model_name = 'Évaluations'
+    singular_name = 'Évaluation'
+    create_url_name = 'evaluation_create'
+    update_url_name = 'evaluation_update'
+    delete_url_name = 'evaluation_delete'
+
+
+class EvaluationCreateView(BaseCRUDCreateView):
+    model = Evaluation
+    fields = ['type_eval', 'cours', 'lib', 'coefficient', 'duree', 'is_published']
+    success_url = reverse_lazy('evaluation_list')
+    model_name = 'Évaluation'
+    action = 'Ajouter'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.object.is_published and self.object.published_at is None:
+            self.object.published_at = timezone.now()
+            self.object.save(update_fields=['published_at'])
+        return response
+
+
+class EvaluationUpdateView(BaseCRUDUpdateView):
+    model = Evaluation
+    fields = ['type_eval', 'cours', 'lib', 'coefficient', 'duree', 'is_published']
+    success_url = reverse_lazy('evaluation_list')
+    model_name = 'Évaluation'
+    action = 'Modifier'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.object.is_published and self.object.published_at is None:
+            self.object.published_at = timezone.now()
+            self.object.save(update_fields=['published_at'])
+        return response
+
+
+class EvaluationDeleteView(BaseCRUDDeleteView):
+    model = Evaluation
+    success_url = reverse_lazy('evaluation_list')
+    model_name = 'Évaluation'
+    singular_name = 'Évaluation'
+    list_url_name = 'evaluation_list'
