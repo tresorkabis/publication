@@ -71,12 +71,12 @@ echo.
 echo Pour demarrer le serveur : run.bat
 echo.
 echo === Comptes de demonstration (mot de passe : demo) ===
-echo   Super Admin : admin@esforca.cd
-echo   Admin       : admin2@esforca.cd
-echo   Secretaire  : secretaire@esforca.cd
-echo   Chef filiere: chef.inf@esforca.cd
-echo   Enseignant  : enseignant.inf1@esforca.cd
-echo   Etudiant    : etudiant.inf.1@esforca.cd
+echo   Super Admin : admin
+echo   Admin       : admin2
+echo   Secretaire  : secretaire
+echo   Chef filiere: chef_inf
+echo   Enseignant  : ens_inf1
+echo   Etudiant    : etud_inf_1
 echo.
 
 pause
