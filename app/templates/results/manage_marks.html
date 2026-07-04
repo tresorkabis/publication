@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6 text-white">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                    <h2 class="text-2xl font-semibold">Gestion des notes</h2>
+                    <p class="text-sm text-blue-100 mt-1">Évaluation #{{ evaluation.id }} — {{ evaluation.cours.libelle }}</p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour au tableau de bord
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Type d’évaluation</p>
+                    <p class="text-base font-semibold text-gray-800">{{ evaluation.type_evaluation.libelle }}</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Date</p>
+                    <p class="text-base font-semibold text-gray-800">{{ evaluation.date|date:'d/m/Y' }}</p>
+                </div>
+            </div>
+
+            {% if cotations %}
+            <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Étudiant</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        {% for cotation in cotations %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ cotation.etudiant.user.get_full_name }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-800">
+                                {% if cotation.note is not None %}
+                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-green-700">{{ cotation.note }}</span>
+                                {% else %}
+                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+                Aucune note n’a encore été enregistrée pour cette évaluation.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
