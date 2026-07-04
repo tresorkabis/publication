@@ -58,6 +58,9 @@ echo [SEED] Generation des donnees de demonstration...
 python manage.py seed_demo_data
 if %errorlevel% neq 0 (
     echo [ERREUR] Echec de la generation des donnees.
+    echo [INFO] Tentative de creation des roles de base...
+    python manage.py shell -c "from app.models import Role; Role.ensure_default_roles(); print('Roles de base crees')"
+    echo [INFO] Veuillez executer manuellement : python manage.py seed_demo_data
     pause
     exit /b 1
 )
