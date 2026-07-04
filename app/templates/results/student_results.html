@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-white rounded-3 shadow-sm border p-4">
+    <h1 class="h4 fw-bold text-dark mb-4">Mes Résultats</h1>
+
+    {% if cotations %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cours</th>
+                        <th>Type d'évaluation</th>
+                        <th>Date</th>
+                        <th>Note</th>
+                        <th>Résultat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cotation in cotations %}
+                        <tr>
+                            <td>{{ cotation.evaluation.cours.libelle }}</td>
+                            <td>{{ cotation.evaluation.type_evaluation.libelle }}</td>
+                            <td>{{ cotation.evaluation.date|date:"d/m/Y" }}</td>
+                            <td class="fw-bold">{{ cotation.note }}/20</td>
+                            <td>
+                                {% if cotation.note >= 10 %}
+                                    <span class="badge bg-success">Validé</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Échec</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 text-end">
+            <a href="{% url 'print_results' %}" class="btn btn-outline-primary">
+                <i class="fas fa-print me-2"></i>Imprimer les résultats
+            </a>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Aucune note n'est disponible pour le moment.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

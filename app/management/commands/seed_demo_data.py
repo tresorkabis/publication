@@ -54,7 +54,6 @@ class Command(BaseCommand):
             {'code': 'MATH', 'libelle': 'Mathématiques et Applications'},
             {'code': 'PHY', 'libelle': 'Physique Fondamentale'},
             {'code': 'GEST', 'libelle': 'Gestion des Entreprises'},
-            {'code': 'COM', 'libelle': 'Communication et Médias'},
         ]
         
         # === SUPER ADMIN ===
@@ -161,9 +160,9 @@ class Command(BaseCommand):
             )
             
             filiere = Filiere.objects.create(
-                codfiliere=f_data['code'],
+                code=f_data['code'],
                 libelle=f_data['libelle'],
-                descript=f'Filière {f_data["libelle"]} - Formation de qualité',
+                description=f'Filière {f_data["libelle"]} - Formation de qualité',
                 chef=chef_personnel
             )
             created_filieres.append(filiere)
@@ -245,11 +244,7 @@ class Command(BaseCommand):
                 annee = 2024 - (len(niveaux) - 1 - i)
                 promo, _ = Promotion.objects.get_or_create(
                     filiere=filiere,
-                    libnom=f'{niveau} {filiere.codfiliere}',
-                    defaults={
-                        'annee': annee,
-                        'niveau': niveau
-                    }
+                    libelle=f'{niveau} {filiere.code}'
                 )
                 
                 # Inscrire les étudiants de cette filière dans les promotions
@@ -276,11 +271,7 @@ class Command(BaseCommand):
         ]
         for s in semestres_data:
             Semestre.objects.get_or_create(
-                libsemestre=s['libelle'],
-                defaults={
-                    'datedeb': s['datedeb'],
-                    'datefin': s['datefin']
-                }
+                libelle=s['libelle']
             )
 
     def create_cours(self):
@@ -300,15 +291,16 @@ class Command(BaseCommand):
         
         semestres = Semestre.objects.all()
         for filiere in Filiere.objects.all():
-            matieres = matieres_par_filiere.get(filiere.codfiliere, ['Cours général'])
+            matieres = matieres_par_filiere.get(filiere.code, ['Cours général'])
             for i, matiere in enumerate(matieres):
                 semestre = semestres[i % len(semestres)]
                 Cours.objects.get_or_create(
-                    codcours=f'{filiere.codfiliere}{i+1:03d}',
+                    code=f'{filiere.code}{i+1:03d}',
                     defaults={
                         'filiere': filiere,
                         'semestre': semestre,
-                        'libelle': matiere
+                        'libelle': matiere,
+                        'volume_horaire': random.randint(30, 90)
                     }
                 )
 
@@ -327,14 +319,10 @@ class Command(BaseCommand):
             for i in range(3):
                 type_eval = type_evals[i % len(type_evals)]
                 eval_instance, _ = Evaluation.objects.get_or_create(
+                    type_evaluation=type_eval,
                     cours=cours,
-                    lib=f'{type_eval.libelle} {cours.libelle}',
-                    defaults={
-                        'type_eval': type_eval,
-                        'coefficient': random.randint(1, 3),
-                        'is_published': True,
-                        'published_at': timezone.now(),
-                    }
+                    date=f'2024-{random.randint(1, 12)}-{random.randint(1, 28)}',
+                    defaults={}
                 )
                 
                 # Noter tous les étudiants inscrits dans les promotions de ce cours

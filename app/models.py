@@ -112,77 +112,61 @@ class Etudiant(models.Model):
 
 
 class Filiere(models.Model):
-    idfiliere = models.AutoField(primary_key=True)
-    codfiliere = models.CharField(max_length=20)
+    code = models.CharField(max_length=20)
     libelle = models.CharField(max_length=100)
-    descript = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     chef = models.ForeignKey(Personnel, on_delete=models.SET_NULL, null=True, blank=True, related_name='filieres_dirigees')
 
     def __str__(self):
         return self.libelle
 
 class Promotion(models.Model):
-    idprom = models.AutoField(primary_key=True)
     filiere = models.ForeignKey(Filiere, on_delete=models.CASCADE)
-    libnom = models.CharField(max_length=100)
-    annee = models.IntegerField()
-    niveau = models.CharField(max_length=50)
-   
+    libelle = models.CharField(max_length=100)   
 
     def __str__(self):
-        return f"{self.libnom} ({self.annee})"
+        return f"{self.libelle}"
 
 class Inscription(models.Model):
-    idinscription = models.AutoField(primary_key=True)
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='inscriptions')
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='inscriptions')
-    annee = models.IntegerField()
+    annee = models.CharField(max_length=9)  # Format: "YYYY-YYYY"
     
     class Meta:
         unique_together = ('etudiant', 'promotion')
 
     def __str__(self):
-        return f"{self.etudiant.user.nom} - {self.promotion.libnom}"
+        return f"{self.etudiant.user.first_name} {self.etudiant.user.last_name} - {self.promotion.libelle}"
     
 class Semestre(models.Model):
-    idsemestre = models.AutoField(primary_key=True)
-    libsemestre = models.CharField(max_length=50)
-    datedeb = models.DateField()
-    datefin = models.DateField()
-
+    libelle = models.CharField(max_length=50)
+    
     def __str__(self):
-        return self.libsemestre
+        return self.libelle
 
 class Cours(models.Model):
-    idcours = models.AutoField(primary_key=True)
     filiere = models.ForeignKey(Filiere, on_delete=models.CASCADE, related_name='cours')
     semestre = models.ForeignKey(Semestre, on_delete=models.CASCADE)
-    codcours = models.CharField(max_length=20)
+    code = models.CharField(max_length=20)
     libelle = models.CharField(max_length=100)
+    volume_horaire = models.IntegerField()
 
     def __str__(self):
         return self.libelle
 
 class TypeEvaluation(models.Model):
-    idtype = models.AutoField(primary_key=True)
     libelle = models.CharField(max_length=100)
-    descript = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.libelle
 
 class Evaluation(models.Model):
-    idevaluation = models.AutoField(primary_key=True)
-    type_eval = models.ForeignKey(TypeEvaluation, on_delete=models.CASCADE)
+    type_evaluation = models.ForeignKey(TypeEvaluation, on_delete=models.CASCADE)
     cours = models.ForeignKey(Cours, on_delete=models.CASCADE)
-    lib = models.CharField(max_length=100)
-    coefficient = models.IntegerField(default=1)
-    duree = models.DurationField(blank=True, null=True)
-    is_published = models.BooleanField(default=False)
-    published_at = models.DateTimeField(blank=True, null=True)
+    date = models.DateField()
 
     def __str__(self):
-        return f"{self.lib} - {self.cours.libelle}"
+        return f"{self.id} - {self.cours.libelle}"
 
 class Cotation(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='cotations')
