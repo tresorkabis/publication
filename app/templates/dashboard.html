@@ -279,11 +279,195 @@
     <div class="dashboard-header">
         <h1 class="dashboard-title">
             <i class="fas fa-chart-line"></i>
-            Tableau de Bord 2024
+            {% if is_student %}
+                Mon tableau de bord
+            {% else %}
+                Tableau de Bord 2024
+            {% endif %}
         </h1>
     </div>
 
-    <!-- Statistiques modernes -->
+    {% if is_student %}
+    <div class="chart-section" style="margin-bottom: 2rem;">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-graduation-cap"></i>
+                Mes notes
+            </div>
+        </div>
+        <div class="stats-container" style="margin-bottom: 1.5rem;">
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Moyenne générale</h3>
+                        <div class="value">{{ student_average|default:"--" }}</div>
+                    </div>
+                    <div class="stat-icon students">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Évaluations enregistrées</h3>
+                        <div class="value">{{ student_cotations|length }}</div>
+                    </div>
+                    <div class="stat-icon users">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="modern-table-2024">
+                <thead>
+                    <tr>
+                        <th>Cours</th>
+                        <th>Évaluation</th>
+                        <th>Date</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cotation in student_cotations %}
+                    <tr>
+                        <td>{{ cotation.evaluation.cours.libelle }}</td>
+                        <td>{{ cotation.evaluation.type_evaluation.libelle }}</td>
+                        <td>{{ cotation.evaluation.date|date:'d/m/Y' }}</td>
+                        <td>
+                            {% if cotation.note is not None %}
+                                <span class="badge-2024 badge-success-2024">{{ cotation.note }}</span>
+                            {% else %}
+                                <span class="badge-2024 badge-secondary-2024">En attente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="empty-state">Aucune note disponible pour le moment.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif is_chef_filiere %}
+    <div class="chart-section" style="margin-bottom: 2rem;">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-user-tie"></i>
+                Ma filière
+            </div>
+            <div style="color: #6b7280; font-size: 0.95rem;">
+                {% if chef_filieres %}
+                    {% for filiere in chef_filieres %}
+                        <span class="badge-2024 badge-success-2024" style="margin-right: 0.35rem;">{{ filiere.libelle }}</span>
+                    {% endfor %}
+                {% else %}
+                    Aucune filière assignée
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="stats-container" style="margin-bottom: 1.5rem;">
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Étudiants</h3>
+                        <div class="value">{{ chef_students_count }}</div>
+                    </div>
+                    <div class="stat-icon students">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Cours</h3>
+                        <div class="value">{{ chef_courses_count }}</div>
+                    </div>
+                    <div class="stat-icon users">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Évaluations</h3>
+                        <div class="value">{{ chef_evaluations_count }}</div>
+                    </div>
+                    <div class="stat-icon staff">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Publiées</h3>
+                        <div class="value">{{ chef_published_evaluations_count }}</div>
+                    </div>
+                    <div class="stat-icon filieres">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if chef_promotions %}
+        <div style="margin-bottom: 1.25rem;">
+            <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Promotions suivies</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                {% for promotion in chef_promotions %}
+                <span class="badge-2024 badge-secondary-2024">{{ promotion.libelle }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="table-responsive">
+            <table class="modern-table-2024">
+                <thead>
+                    <tr>
+                        <th>Cours</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Statut</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluation in chef_pending_evaluations %}
+                    <tr>
+                        <td>{{ evaluation.cours.libelle }}</td>
+                        <td>{{ evaluation.type_evaluation.libelle }}</td>
+                        <td>{{ evaluation.date|date:'d/m/Y' }}</td>
+                        <td>
+                            {% if evaluation.is_published %}
+                            <span class="badge-2024 badge-success-2024">Publié</span>
+                            {% else %}
+                            <span class="badge-2024 badge-secondary-2024">À traiter</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'manage_marks' evaluation.id %}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                                Gérer
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">Aucune évaluation en attente pour le moment.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
     <div class="stats-container">
         <div class="stat-card-2024">
             <div class="stat-content">
@@ -358,7 +542,6 @@
         </div>
     </div>
 
-    <!-- Graphique moderne -->
     <div class="chart-section">
         <div class="chart-header">
             <div class="chart-title">
@@ -371,7 +554,6 @@
         </div>
     </div>
 
-    <!-- Tableaux modernes -->
     <div class="tables-container">
         <div class="table-card-2024">
             <div class="table-header">
@@ -447,8 +629,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
+{% if not is_student %}
 <!-- Chart.js avec configuration ultra-moderne -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -550,6 +734,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% endif %}
 {% endblock %}
 <task_progress>
 - [x] Lire le fichier config/settings.py

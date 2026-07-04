@@ -63,6 +63,50 @@ def profile(request):
 
 @login_required
 def dashboard(request):
+    if hasattr(request.user, 'etudiant'):
+        student = request.user.etudiant
+        student_cotations = (
+            Cotation.objects.filter(etudiant=student)
+            .select_related('evaluation', 'evaluation__cours', 'evaluation__type_evaluation')
+            .order_by('-evaluation__date', '-id')
+        )
+        context = {
+            'student': student,
+            'student_cotations': student_cotations,
+            'student_average': round(
+                sum(float(c.note) for c in student_cotations if c.note is not None) / len([c for c in student_cotations if c.note is not None])
+                , 2
+            ) if student_cotations.filter(note__isnull=False).exists() else None,
+            'is_student': True,
+        }
+        return render(request, 'dashboard.html', context)
+
+    if request.user.has_role('chef de filière'):
+        chef_personnel = getattr(request.user, 'personnel', None)
+        raw_chef_filieres = Filiere.objects.filter(chef=chef_personnel).order_by('libelle', 'code') if chef_personnel else Filiere.objects.none()
+        chef_filieres = []
+        seen_filiere_labels = set()
+        for filiere in raw_chef_filieres:
+            if filiere.libelle in seen_filiere_labels:
+                continue
+            seen_filiere_labels.add(filiere.libelle)
+            chef_filieres.append(filiere)
+
+        chef_evaluations = Evaluation.objects.filter(cours__filiere__in=chef_filieres).select_related('cours', 'type_evaluation').order_by('-date', '-id')
+        context = {
+            'is_student': False,
+            'is_chef_filiere': True,
+            'chef_personnel': chef_personnel,
+            'chef_filieres': chef_filieres,
+            'chef_students_count': Etudiant.objects.filter(inscriptions__promotion__filiere__in=chef_filieres).distinct().count(),
+            'chef_courses_count': Cours.objects.filter(filiere__in=chef_filieres).count(),
+            'chef_evaluations_count': chef_evaluations.count(),
+            'chef_published_evaluations_count': chef_evaluations.filter(is_published=True).count(),
+            'chef_pending_evaluations': chef_evaluations.filter(is_published=False)[:5],
+            'chef_promotions': Promotion.objects.filter(filiere__in=chef_filieres).distinct(),
+        }
+        return render(request, 'dashboard.html', context)
+
     # Statistiques générales
     total_users = User.objects.count()
     total_students = Etudiant.objects.count()
@@ -96,6 +140,7 @@ def dashboard(request):
         'students_count_data': json.dumps(students_count_data),
         'recent_inscriptions': recent_inscriptions,
         'recent_evaluations': recent_evaluations,
+        'is_student': False,
     }
 
     return render(request, 'dashboard.html', context)
