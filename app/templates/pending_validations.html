@@ -1,77 +1,68 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-    <div class="mx-auto max-w-7xl">
-        <div class="mb-6 border-b border-slate-200 pb-6">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <div class="mb-2 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                        <i class="fas fa-user-check mr-2"></i>
-                        Validation des comptes
-                    </div>
-                    <h1 class="text-2xl font-semibold text-slate-800">Validations des inscriptions</h1>
-                    <p class="mt-1 text-sm text-slate-600">Consultez et approuvez les nouveaux comptes avant leur activation.</p>
+<div class="validations-container">
+    <div class="validations-card">
+        <div class="validations-header">
+            <div class="header-content">
+                <div class="header-badge">
+                    <i class="fas fa-user-check"></i>
+                    Validation des comptes
                 </div>
-                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">En attente</div>
-                    <div class="text-xl font-semibold text-slate-800">{{ users|length }}</div>
-                </div>
+                <h1 class="header-title">Validations des inscriptions</h1>
+                <p class="header-subtitle">Consultez et approuvez les nouveaux comptes avant leur activation</p>
+            </div>
+            <div class="pending-count">
+                <div class="count-label">En attente</div>
+                <div class="count-value">{{ users|length }}</div>
             </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h2 class="text-lg font-semibold text-slate-800">Liste des comptes à valider</h2>
-                        <p class="text-sm text-slate-600">Les demandes sont présentées ici dans un format clair et structuré.</p>
-                    </div>
-                    <div class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
-                        <i class="fas fa-clock mr-2"></i>
-                        {{ users|length }} à traiter
-                    </div>
+        <div class="validations-content">
+            <div class="content-header">
+                <h2 class="content-title">Liste des comptes à valider</h2>
+                <p class="content-subtitle">Les demandes sont présentées ici dans un format clair et structuré</p>
+                <div class="pending-indicator">
+                    <i class="fas fa-clock"></i>
+                    {{ users|length }} à traiter
                 </div>
             </div>
 
-            <div class="p-4 sm:p-6">
+            <div class="validations-table-container">
                 {% if users %}
-                    <div class="overflow-hidden rounded-xl border border-slate-200">
-                        <table class="min-w-full divide-y divide-slate-200">
-                            <thead class="bg-slate-50">
+                    <div class="table-responsive">
+                        <table class="validations-table">
+                            <thead>
                                 <tr>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Utilisateur</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Email</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Date d'inscription</th>
-                                    <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Action</th>
+                                    <th>Utilisateur</th>
+                                    <th>Email</th>
+                                    <th>Date d'inscription</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white">
+                            <tbody>
                                 {% for user in users %}
-                                    <tr class="hover:bg-slate-50">
-                                        <td class="px-5 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
-                                                    {% if user.prenom and user.nom %}
-                                                        {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
-                                                    {% else %}
-                                                        U
-                                                    {% endif %}
-                                                </div>
-                                                <div class="ml-3">
-                                                    <div class="text-sm font-semibold text-slate-800">{{ user.get_full_name|default:user.username }}</div>
-                                                    <div class="text-xs text-slate-500">@{{ user.username }}</div>
-                                                </div>
+                                    <tr class="table-row">
+                                        <td class="user-cell">
+                                            <div class="user-avatar">
+                                                {% if user.prenom and user.nom %}
+                                                    {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+                                                {% else %}
+                                                    U
+                                                {% endif %}
+                                            </div>
+                                            <div class="user-info">
+                                                <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                                                <div class="user-username">@{{ user.username }}</div>
                                             </div>
                                         </td>
-                                        <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">{{ user.email }}</td>
-                                        <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">{{ user.date_joined|date:'d/m/Y H:i' }}</td>
-                                        <td class="px-5 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td class="email-cell">{{ user.email }}</td>
+                                        <td class="date-cell">{{ user.date_joined|date:'d/m/Y H:i' }}</td>
+                                        <td class="action-cell">
                                             <form method="post" action="{% url 'validate_user' user.id %}">
                                                 {% csrf_token %}
-                                                <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-white transition hover:bg-emerald-700">
-                                                    <i class="fas fa-check mr-2"></i>
-                                                    Valider
+                                                <button type="submit" class="validate-button">
+                                                    <i class="fas fa-check"></i> Valider
                                                 </button>
                                             </form>
                                         </td>
@@ -81,16 +72,310 @@
                         </table>
                     </div>
                 {% else %}
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center">
-                        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm">
+                    <div class="empty-state">
+                        <div class="empty-icon">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <h3 class="text-base font-semibold text-slate-800">Aucun compte en attente</h3>
-                        <p class="mt-1 text-sm text-slate-600">Toutes les inscriptions ont déjà été traitées.</p>
+                        <h3 class="empty-title">Aucun compte en attente</h3>
+                        <p class="empty-subtitle">Toutes les inscriptions ont déjà été traitées</p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .validations-container {
+        display: flex;
+        justify-content: center;
+        padding: 2rem 1rem;
+        min-height: calc(100vh - 120px);
+        background-color: #f6f8fb;
+    }
+
+    .validations-card {
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .validations-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .header-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        background-color: rgba(13, 59, 102, 0.08);
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #0d3b66;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-badge i {
+        margin-right: 0.5rem;
+        color: #1c6ca8;
+    }
+
+    .header-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+    }
+
+    .header-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .pending-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        min-width: 120px;
+    }
+
+    .count-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .count-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-top: 0.25rem;
+    }
+
+    .validations-content {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .content-header {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .content-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .content-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .pending-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        background: rgba(28, 108, 168, 0.1);
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1c6ca8;
+        align-self: flex-start;
+    }
+
+    .pending-indicator i {
+        margin-right: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .validations-table-container {
+        padding: 1.5rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+    }
+
+    .validations-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .validations-table th {
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .validations-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-row:hover {
+        background-color: #f9fafb;
+    }
+
+    .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #0d3b66, #1c6ca8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .user-username {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .email-cell {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .date-cell {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .action-cell {
+        text-align: right;
+    }
+
+    .validate-button {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .validate-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .validate-button i {
+        font-size: 0.875rem;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        text-align: center;
+        background: #f9fafb;
+        border: 1px dashed #e5e7eb;
+        border-radius: 12px;
+    }
+
+    .empty-icon {
+        width: 3rem;
+        height: 3rem;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #10b981;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+        .validations-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .validations-table {
+            min-width: 800px;
+        }
+
+        .user-cell {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+    }
+</style>
 {% endblock %}
