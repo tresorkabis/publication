@@ -164,6 +164,21 @@ class Evaluation(models.Model):
     type_evaluation = models.ForeignKey(TypeEvaluation, on_delete=models.CASCADE)
     cours = models.ForeignKey(Cours, on_delete=models.CASCADE)
     date = models.DateField()
+    is_published = models.BooleanField(default=False)
+    published_at = models.DateTimeField(blank=True, null=True)
+    coefficient = models.PositiveIntegerField(default=1)
+
+    @property
+    def type_eval(self):
+        return self.type_evaluation
+
+    @property
+    def idevaluation(self):
+        return self.id
+
+    @property
+    def lib(self):
+        return self.cours.libelle if self.cours else ''
 
     def __str__(self):
         return f"{self.id} - {self.cours.libelle}"

@@ -115,7 +115,11 @@
     <div class="profile-card">
         <div class="profile-header">
             <div class="profile-avatar">
-                {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+                {% if user.prenom and user.nom %}
+                    {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+                {% else %}
+                    U
+                {% endif %}
             </div>
             <h2>Mon profil</h2>
             <p>{{ user.email }}</p>

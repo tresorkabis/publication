@@ -213,7 +213,11 @@
                         <div class="dropdown ms-3">
                             <button class="user-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <div class="user-avatar">
-                                    {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+                                    {% if user.prenom and user.nom %}
+                                        {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+                                    {% else %}
+                                        U
+                                    {% endif %}
                                 </div>
                                 <div class="user-info text-start">
                                     <div class="user-name">{{ user.prenom }} {{ user.nom }}</div>

@@ -23,7 +23,7 @@ def home(request):
             total_promotions=Count('promotion'),
             total_cours=Count('cours')
         ).all(),
-        'recent_evaluations': Evaluation.objects.select_related('cours', 'type_eval').order_by('-id')[:5],
+        'recent_evaluations': Evaluation.objects.select_related('cours', 'type_evaluation').order_by('-id')[:5],
     }
     return render(request, 'home.html', context)
 
@@ -169,7 +169,7 @@ def print_results(request):
         cotations = Cotation.objects.filter(
             etudiant=request.user.etudiant,
             evaluation__is_published=True
-        ).select_related('evaluation', 'evaluation__cours', 'evaluation__type_eval')
+        ).select_related('evaluation', 'evaluation__cours', 'evaluation__type_evaluation')
         return render(request, 'results/print_results.html', {'cotations': cotations, 'today': timezone.now()})
     return redirect('dashboard')
 
@@ -186,7 +186,7 @@ def edit_mark(request, cotation_id):
             cotation.note = note
             cotation.save()
             messages.success(request, "La note a été modifiée.")
-            return redirect('manage_marks', evaluation_id=cotation.evaluation.idevaluation)
+            return redirect('manage_marks', evaluation_id=cotation.evaluation.id)
 
     return render(request, 'results/edit_mark.html', {'cotation': cotation})
 
@@ -197,7 +197,7 @@ def delete_mark(request, cotation_id):
         return redirect('dashboard')
 
     cotation = Cotation.objects.get(pk=cotation_id)
-    eval_id = cotation.evaluation.idevaluation
+    eval_id = cotation.evaluation.id
     cotation.delete()
     messages.success(request, "La note a été supprimée.")
     return redirect('manage_marks', evaluation_id=eval_id)
