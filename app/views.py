@@ -23,7 +23,7 @@ def home(request):
             total_promotions=Count('promotion'),
             total_cours=Count('cours')
         ).all(),
-        'recent_evaluations': Evaluation.objects.select_related('cours', 'type_eval').order_by('-idevaluation')[:5],
+        'recent_evaluations': Evaluation.objects.select_related('cours', 'type_eval').order_by('-id')[:5],
     }
     return render(request, 'home.html', context)
 
