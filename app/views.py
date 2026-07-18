@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Count, Q
 from .models import *
-from .forms import UserRegistrationForm, UserProfileForm
+from .forms import UserRegistrationForm, UserProfileForm, PlanificationExamenForm, PropositionCoursForm
 from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.utils import timezone
@@ -248,6 +248,46 @@ def delete_mark(request, cotation_id):
     return redirect('manage_marks', evaluation_id=eval_id)
 
 @login_required
+def planifier_examen(request):
+    if not request.user.has_role('chef de filière'):
+        messages.error(request, "Accès réservé au chef de filière.")
+        return redirect('dashboard')
+
+    chef_personnel = getattr(request.user, 'personnel', None)
+    filieres = Filiere.objects.filter(chef=chef_personnel).order_by('libelle', 'code') if chef_personnel else Filiere.objects.none()
+
+    if request.method == 'POST':
+        form = PlanificationExamenForm(request.POST, filieres=filieres)
+        if form.is_valid():
+            evaluation = form.save()
+            messages.success(request, "L'examen a été planifié avec succès.")
+            return redirect('manage_marks', evaluation_id=evaluation.id)
+    else:
+        form = PlanificationExamenForm(filieres=filieres)
+
+    return render(request, 'results/planifier_examen.html', {'form': form, 'filieres': filieres})
+
+@login_required
+def proposer_cours(request):
+    if not request.user.has_role('chef de filière'):
+        messages.error(request, "Accès réservé au chef de filière.")
+        return redirect('dashboard')
+
+    chef_personnel = getattr(request.user, 'personnel', None)
+    filieres = Filiere.objects.filter(chef=chef_personnel).order_by('libelle', 'code') if chef_personnel else Filiere.objects.none()
+
+    if request.method == 'POST':
+        form = PropositionCoursForm(request.POST, filieres=filieres)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "La proposition de cours a été enregistrée.")
+            return redirect('proposer_cours')
+    else:
+        form = PropositionCoursForm(filieres=filieres)
+
+    return render(request, 'results/proposer_cours.html', {'form': form, 'filieres': filieres})
+
+@login_required
 def manage_marks(request, evaluation_id):
     if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
         messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
@@ -255,9 +295,32 @@ def manage_marks(request, evaluation_id):
 
     evaluation = Evaluation.objects.get(pk=evaluation_id)
     cotations = Cotation.objects.filter(evaluation=evaluation).select_related('etudiant', 'etudiant__user')
+    students = (
+        Etudiant.objects.filter(inscriptions__promotion__filiere=evaluation.cours.filiere)
+        .distinct()
+        .select_related('user')
+        .order_by('user__nom', 'user__postnom', 'user__prenom')
+    )
+    promotions = (
+        Promotion.objects.filter(inscriptions__etudiant__in=students)
+        .distinct()
+        .order_by('libelle')
+    )
+    primary_promotion = promotions.first()
+    cotation_map = {cotation.etudiant_id: cotation for cotation in cotations}
+    student_entries = [
+        {
+            'student': student,
+            'cotation': cotation_map.get(student.id),
+        }
+        for student in students
+    ]
+
     return render(request, 'results/manage_marks.html', {
         'evaluation': evaluation,
-        'cotations': cotations,
+        'student_entries': student_entries,
+        'promotion': primary_promotion,
+        'filiere': evaluation.cours.filiere,
     })
 
 @login_required
@@ -285,6 +348,27 @@ def publish_evaluation(request, evaluation_id):
         return redirect('manage_marks', evaluation_id=evaluation_id)
 
     return render(request, 'results/publish_evaluation.html', {'evaluation': evaluation})
+
+@login_required
+def publier_horaires_examens(request):
+    if not request.user.has_role('chef de filière'):
+        messages.error(request, "Accès réservé au chef de filière.")
+        return redirect('dashboard')
+
+    chef_personnel = getattr(request.user, 'personnel', None)
+    filieres = Filiere.objects.filter(chef=chef_personnel).order_by('libelle', 'code') if chef_personnel else Filiere.objects.none()
+    examens = Evaluation.objects.filter(cours__filiere__in=filieres).select_related('cours', 'type_evaluation').order_by('date', 'cours__libelle')
+
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('examens')
+        if selected_ids:
+            updated = Evaluation.objects.filter(pk__in=selected_ids, cours__filiere__in=filieres).update(is_published=True, published_at=timezone.now())
+            messages.success(request, f"{updated} horaire(s) d'examen publié(s) avec succès.")
+        else:
+            messages.error(request, "Sélectionnez au moins un examen à publier.")
+        return redirect('publier_horaires_examens')
+
+    return render(request, 'results/publier_horaires_examens.html', {'examens': examens, 'filieres': filieres})
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):

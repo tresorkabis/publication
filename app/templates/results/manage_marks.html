@@ -17,45 +17,35 @@
         </div>
 
         <div class="p-6">
-            <div class="grid md:grid-cols-2 gap-4 mb-6">
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Type d’évaluation</p>
-                    <p class="text-base font-semibold text-gray-800">{{ evaluation.type_evaluation.libelle }}</p>
-                </div>
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Date</p>
-                    <p class="text-base font-semibold text-gray-800">{{ evaluation.date|date:'d/m/Y' }}</p>
+            <div class="mb-5 rounded-2xl border border-gray-200 bg-slate-50 p-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
+                        <i class="fas fa-school mr-2"></i>L1 informatique de gestion
+                    </span>
                 </div>
             </div>
 
-            {% if cotations %}
-            <div class="overflow-x-auto rounded-xl border border-gray-200">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Étudiant</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Note</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
-                        {% for cotation in cotations %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-700">{{ cotation.etudiant.user.get_full_name }}</td>
-                            <td class="px-4 py-3 text-sm font-medium text-gray-800">
-                                {% if cotation.note is not None %}
-                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-green-700">{{ cotation.note }}</span>
-                                {% else %}
-                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            {% if student_entries %}
+            <div class="space-y-3">
+                {% for entry in student_entries %}
+                <div class="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all">
+                    <div class="font-semibold text-gray-900 truncate">
+                        {{ entry.student.user.get_full_name|default:entry.student.user.username }}
+                    </div>
+                    <div class="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        <span class="text-gray-500">Cote :</span>
+                        {% if entry.cotation and entry.cotation.note is not None %}
+                            <span class="ml-2 text-gray-900">{{ entry.cotation.note }}</span>
+                        {% else %}
+                            <span class="ml-2 text-gray-500">—</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             {% else %}
             <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
-                Aucune note n’a encore été enregistrée pour cette évaluation.
+                Aucun étudiant n’est associé à cette filière pour l’instant.
             </div>
             {% endif %}
         </div>

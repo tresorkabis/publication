@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User
+from .models import User, Evaluation, TypeEvaluation, Cours, Personnel, ProposalCoursEnseignant
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -50,6 +50,50 @@ class UserRegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class PlanificationExamenForm(forms.ModelForm):
+    class Meta:
+        model = Evaluation
+        fields = ['type_evaluation', 'cours', 'date', 'coefficient']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
+            'type_evaluation': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
+            'cours': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
+            'coefficient': forms.NumberInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500', 'min': '1'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        filieres = kwargs.pop('filieres', None)
+        super().__init__(*args, **kwargs)
+        if filieres is not None:
+            self.fields['cours'].queryset = Cours.objects.filter(filiere__in=filieres).order_by('libelle')
+        self.fields['type_evaluation'].queryset = TypeEvaluation.objects.order_by('libelle')
+        self.fields['date'].label = 'Date de l’examen'
+        self.fields['coefficient'].label = 'Coefficient'
+        self.fields['cours'].label = 'Cours'
+        self.fields['type_evaluation'].label = 'Type d’évaluation'
+
+
+class PropositionCoursForm(forms.ModelForm):
+    class Meta:
+        model = ProposalCoursEnseignant
+        fields = ['cours', 'enseignant', 'message']
+        widgets = {
+            'cours': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
+            'enseignant': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
+            'message': forms.Textarea(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500', 'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        filieres = kwargs.pop('filieres', None)
+        super().__init__(*args, **kwargs)
+        if filieres is not None:
+            self.fields['cours'].queryset = Cours.objects.filter(filiere__in=filieres).order_by('libelle')
+        self.fields['enseignant'].queryset = Personnel.objects.filter(user__utilisateur_roles__role__libelle='enseignant').order_by('user__nom', 'user__postnom', 'user__prenom')
+        self.fields['cours'].label = 'Cours'
+        self.fields['enseignant'].label = 'Enseignant'
+        self.fields['message'].label = 'Message'
 
 
 class UserProfileForm(forms.ModelForm):

@@ -38,7 +38,14 @@ class User(AbstractUser):
         return f"{self.nom} {self.postnom} {self.prenom}"
 
     def get_full_name(self):
-        return f"{self.nom} {self.postnom} {self.prenom}" if self.nom or self.postnom or self.prenom else super().get_full_name()
+        parts = []
+        if self.prenom:
+            parts.append(self.prenom)
+        if self.nom:
+            parts.append(self.nom)
+        if self.postnom and 'informatique de gestion' not in self.postnom.lower():
+            parts.append(self.postnom)
+        return ' '.join(parts) if parts else super().get_full_name()
 
     @property
     def telephone(self):
@@ -190,3 +197,14 @@ class Cotation(models.Model):
 
     class Meta:
         unique_together = ('etudiant', 'evaluation')
+
+
+class ProposalCoursEnseignant(models.Model):
+    cours = models.ForeignKey(Cours, on_delete=models.CASCADE, related_name='propositions_enseignants')
+    enseignant = models.ForeignKey(Personnel, on_delete=models.CASCADE, related_name='propositions_cours')
+    message = models.TextField(blank=True, null=True)
+    date_proposition = models.DateTimeField(auto_now_add=True)
+    est_accepte = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.cours.libelle} -> {self.enseignant.user.get_full_name()}"

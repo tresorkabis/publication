@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6 text-white">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                    <h2 class="text-2xl font-semibold">Publier les horaires des examens</h2>
+                    <p class="text-sm text-blue-100 mt-1">Sélectionnez les examens à rendre visibles pour les étudiants</p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour au tableau de bord
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {% if examens %}
+                <div class="space-y-3">
+                    {% for examen in examens %}
+                    <label class="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                        <div>
+                            <p class="font-semibold text-gray-900">{{ examen.cours.libelle }}</p>
+                            <p class="text-sm text-gray-500">{{ examen.type_evaluation.libelle }} • {{ examen.date|date:'d/m/Y' }}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            {% if examen.is_published %}
+                            <span class="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">Publié</span>
+                            {% else %}
+                            <span class="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">En attente</span>
+                            {% endif %}
+                            <input type="checkbox" name="examens" value="{{ examen.id }}" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Publier les horaires sélectionnés
+                    </button>
+                </div>
+                {% else %}
+                <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+                    Aucun examen disponible pour le moment.
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
