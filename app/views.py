@@ -81,6 +81,11 @@ def dashboard(request):
         }
         return render(request, 'dashboard.html', context)
 
+    # Périodes d'examens actives pour toutes les filières (affichage global)
+    toutes_periodes_examens = CalendrierAcademique.objects.filter(
+        est_actif=True
+    ).select_related('filiere', 'promotion', 'annee_etude', 'semestre').order_by('date_debut')
+
     if request.user.has_role('chef de filière'):
         chef_personnel = getattr(request.user, 'personnel', None)
         raw_chef_filieres = Filiere.objects.filter(chef=chef_personnel).order_by('libelle', 'code') if chef_personnel else Filiere.objects.none()
@@ -93,6 +98,10 @@ def dashboard(request):
             chef_filieres.append(filiere)
 
         chef_evaluations = Evaluation.objects.filter(cours__filiere__in=chef_filieres).select_related('cours', 'type_evaluation').order_by('-date', '-id')
+        
+        # Périodes d'examens pour les filières du chef
+        chef_periodes_examens = toutes_periodes_examens.filter(filiere__in=chef_filieres)
+        
         context = {
             'is_student': False,
             'is_chef_filiere': True,
@@ -104,6 +113,7 @@ def dashboard(request):
             'chef_published_evaluations_count': chef_evaluations.filter(is_published=True).count(),
             'chef_pending_evaluations': chef_evaluations.filter(is_published=False)[:5],
             'chef_promotions': Promotion.objects.filter(filiere__in=chef_filieres).distinct(),
+            'periodes_examens': chef_periodes_examens,
         }
         return render(request, 'dashboard.html', context)
 
@@ -141,6 +151,7 @@ def dashboard(request):
         'recent_inscriptions': recent_inscriptions,
         'recent_evaluations': recent_evaluations,
         'is_student': False,
+        'periodes_examens': toutes_periodes_examens,
     }
 
     return render(request, 'dashboard.html', context)
@@ -255,17 +266,47 @@ def planifier_examen(request):
 
     chef_personnel = getattr(request.user, 'personnel', None)
     filieres = Filiere.objects.filter(chef=chef_personnel).order_by('libelle', 'code') if chef_personnel else Filiere.objects.none()
+    promotions = Promotion.objects.filter(filiere__in=filieres).distinct() if filieres else Promotion.objects.none()
+
+    # Examens déjà planifiés pour les filières du chef
+    examens_planifies = Evaluation.objects.filter(
+        cours__filiere__in=filieres
+    ).select_related(
+        'cours', 'type_evaluation', 'calendrier'
+    ).order_by('-date', '-id')
+
+    # Calendriers académiques actifs pour les filières du chef
+    calendriers = CalendrierAcademique.objects.filter(
+        filiere__in=filieres,
+        est_actif=True
+    ).select_related('promotion', 'semestre', 'annee_etude').order_by('annee_etude__ordre', 'date_debut')
+
+    # Grouper les calendriers par année d'étude
+    calendriers_groupes = {}
+    for cal in calendriers:
+        annee_label = cal.annee_etude.libelle if cal.annee_etude else "Tronc commun"
+        if annee_label not in calendriers_groupes:
+            calendriers_groupes[annee_label] = []
+        calendriers_groupes[annee_label].append(cal)
 
     if request.method == 'POST':
         form = PlanificationExamenForm(request.POST, filieres=filieres)
         if form.is_valid():
             evaluation = form.save()
             messages.success(request, "L'examen a été planifié avec succès.")
-            return redirect('manage_marks', evaluation_id=evaluation.id)
+            return redirect('planifier_examen')
     else:
         form = PlanificationExamenForm(filieres=filieres)
 
-    return render(request, 'results/planifier_examen.html', {'form': form, 'filieres': filieres})
+    return render(request, 'results/planifier_examen.html', {
+        'form': form,
+        'filieres': filieres,
+        'promotions': promotions,
+        'examens_planifies': examens_planifies,
+        'calendriers': calendriers,
+        'calendriers_groupes': calendriers_groupes,
+        'today': timezone.now().date(),
+    })
 
 @login_required
 def proposer_cours(request):
@@ -574,3 +615,304 @@ class EvaluationDeleteView(BaseCRUDDeleteView):
     model_name = 'Évaluation'
     singular_name = 'Évaluation'
     list_url_name = 'evaluation_list'
+
+class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        messages.error(self.request, "Accès réservé à l'administrateur.")
+        return redirect('dashboard')
+
+class UserListView(AdminRequiredMixin, BaseCRUDListView):
+    model = User
+    model_name = 'Utilisateurs'
+    singular_name = 'Utilisateur'
+    create_url_name = 'user_create'
+    update_url_name = 'user_update'
+    delete_url_name = 'user_delete'
+
+    def get_queryset(self):
+        return User.objects.all().order_by('-is_active', 'nom', 'prenom')
+
+    def get_fields(self):
+        return [
+            ('username', "Nom d'utilisateur"),
+            ('nom', 'Nom'),
+            ('prenom', 'Prénom'),
+            ('email', 'Email'),
+            ('get_roles_display', 'Rôles'),
+            ('is_active', 'Actif'),
+            ('is_validated', 'Validé'),
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['extra_fields'] = ['is_staff', 'is_superuser']
+        return context
+
+    def get_roles_display(self, obj):
+        return ", ".join(obj.role_labels) if obj.role_labels else "-"
+    get_roles_display.short_description = 'Rôles'
+
+class UserCreateView(AdminRequiredMixin, CreateView):
+    model = User
+    template_name = 'crud/user_form.html'
+    fields = ['username', 'email', 'nom', 'postnom', 'prenom', 'sexe', 'tel', 'mat', 'adresse', 'is_active', 'is_validated', 'is_staff', 'is_superuser']
+    success_url = reverse_lazy('user_list')
+    model_name = 'Utilisateur'
+    action = 'Ajouter'
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.set_password('changeme123')
+        user.save()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Utilisateur'),
+            'action': getattr(self, 'action', 'Ajouter'),
+        })
+        return context
+
+class UserUpdateView(AdminRequiredMixin, UpdateView):
+    model = User
+    template_name = 'crud/user_form.html'
+    fields = ['username', 'email', 'nom', 'postnom', 'prenom', 'sexe', 'tel', 'mat', 'adresse', 'is_active', 'is_validated', 'is_staff', 'is_superuser']
+    success_url = reverse_lazy('user_list')
+    model_name = 'Utilisateur'
+    action = 'Modifier'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Utilisateur'),
+            'action': getattr(self, 'action', 'Modifier'),
+        })
+        return context
+
+class UserDeleteView(AdminRequiredMixin, DeleteView):
+    model = User
+    success_url = reverse_lazy('user_list')
+    template_name = 'crud/confirm_delete.html'
+    model_name = 'Utilisateur'
+    singular_name = 'Utilisateur'
+    list_url_name = 'user_list'
+
+class PersonnelListView(AdminRequiredMixin, BaseCRUDListView):
+    model = Personnel
+    model_name = 'Personnels'
+    singular_name = 'Personnel'
+    create_url_name = 'personnel_create'
+    update_url_name = 'personnel_update'
+    delete_url_name = 'personnel_delete'
+
+    def get_fields(self):
+        return [
+            ('user', 'Utilisateur'),
+            ('fonction', 'Fonction'),
+            ('grade', 'Grade'),
+        ]
+
+    def get_user(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    get_user.short_description = 'Utilisateur'
+
+class PersonnelCreateView(AdminRequiredMixin, CreateView):
+    model = Personnel
+    template_name = 'crud/form.html'
+    fields = ['user', 'fonction', 'grade']
+    success_url = reverse_lazy('personnel_list')
+    model_name = 'Personnel'
+    action = 'Ajouter'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Personnel'),
+            'action': getattr(self, 'action', 'Ajouter'),
+        })
+        return context
+
+class PersonnelUpdateView(AdminRequiredMixin, UpdateView):
+    model = Personnel
+    template_name = 'crud/form.html'
+    fields = ['user', 'fonction', 'grade']
+    success_url = reverse_lazy('personnel_list')
+    model_name = 'Personnel'
+    action = 'Modifier'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Personnel'),
+            'action': getattr(self, 'action', 'Modifier'),
+        })
+        return context
+
+class PersonnelDeleteView(AdminRequiredMixin, DeleteView):
+    model = Personnel
+    success_url = reverse_lazy('personnel_list')
+    template_name = 'crud/confirm_delete.html'
+    model_name = 'Personnel'
+    singular_name = 'Personnel'
+    list_url_name = 'personnel_list'
+
+class EtudiantListView(AdminRequiredMixin, BaseCRUDListView):
+    model = Etudiant
+    model_name = 'Étudiants'
+    singular_name = 'Étudiant'
+    create_url_name = 'etudiant_create'
+    update_url_name = 'etudiant_update'
+    delete_url_name = 'etudiant_delete'
+
+    def get_fields(self):
+        return [
+            ('user', 'Utilisateur'),
+            ('matricule', 'Matricule'),
+            ('date_inscription', "Date d'inscription"),
+        ]
+
+    def get_user(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    get_user.short_description = 'Utilisateur'
+
+class EtudiantCreateView(AdminRequiredMixin, CreateView):
+    model = Etudiant
+    template_name = 'crud/form.html'
+    fields = ['user', 'matricule']
+    success_url = reverse_lazy('etudiant_list')
+    model_name = 'Étudiant'
+    action = 'Ajouter'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Étudiant'),
+            'action': getattr(self, 'action', 'Ajouter'),
+        })
+        return context
+
+class EtudiantUpdateView(AdminRequiredMixin, UpdateView):
+    model = Etudiant
+    template_name = 'crud/form.html'
+    fields = ['user', 'matricule']
+    success_url = reverse_lazy('etudiant_list')
+    model_name = 'Étudiant'
+    action = 'Modifier'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Étudiant'),
+            'action': getattr(self, 'action', 'Modifier'),
+        })
+        return context
+
+class EtudiantDeleteView(AdminRequiredMixin, DeleteView):
+    model = Etudiant
+    success_url = reverse_lazy('etudiant_list')
+    template_name = 'crud/confirm_delete.html'
+    model_name = 'Étudiant'
+    singular_name = 'Étudiant'
+    list_url_name = 'etudiant_list'
+
+class RoleListView(AdminRequiredMixin, BaseCRUDListView):
+    model = Role
+    model_name = 'Rôles'
+    singular_name = 'Rôle'
+    create_url_name = 'role_create'
+    update_url_name = 'role_update'
+    delete_url_name = 'role_delete'
+
+class RoleCreateView(AdminRequiredMixin, CreateView):
+    model = Role
+    template_name = 'crud/form.html'
+    fields = ['libelle']
+    success_url = reverse_lazy('role_list')
+    model_name = 'Rôle'
+    action = 'Ajouter'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Rôle'),
+            'action': getattr(self, 'action', 'Ajouter'),
+        })
+        return context
+
+class RoleUpdateView(AdminRequiredMixin, UpdateView):
+    model = Role
+    template_name = 'crud/form.html'
+    fields = ['libelle']
+    success_url = reverse_lazy('role_list')
+    model_name = 'Rôle'
+    action = 'Modifier'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Rôle'),
+            'action': getattr(self, 'action', 'Modifier'),
+        })
+        return context
+
+class RoleDeleteView(AdminRequiredMixin, DeleteView):
+    model = Role
+    success_url = reverse_lazy('role_list')
+    template_name = 'crud/confirm_delete.html'
+    model_name = 'Rôle'
+    singular_name = 'Rôle'
+    list_url_name = 'role_list'
+
+class FonctionListView(AdminRequiredMixin, BaseCRUDListView):
+    model = Fonction
+    model_name = 'Fonctions'
+    singular_name = 'Fonction'
+    create_url_name = 'fonction_create'
+    update_url_name = 'fonction_update'
+    delete_url_name = 'fonction_delete'
+
+class FonctionCreateView(AdminRequiredMixin, CreateView):
+    model = Fonction
+    template_name = 'crud/form.html'
+    fields = ['intitule']
+    success_url = reverse_lazy('fonction_list')
+    model_name = 'Fonction'
+    action = 'Ajouter'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Fonction'),
+            'action': getattr(self, 'action', 'Ajouter'),
+        })
+        return context
+
+class FonctionUpdateView(AdminRequiredMixin, UpdateView):
+    model = Fonction
+    template_name = 'crud/form.html'
+    fields = ['intitule']
+    success_url = reverse_lazy('fonction_list')
+    model_name = 'Fonction'
+    action = 'Modifier'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'model_name': getattr(self, 'model_name', 'Fonction'),
+            'action': getattr(self, 'action', 'Modifier'),
+        })
+        return context
+
+class FonctionDeleteView(AdminRequiredMixin, DeleteView):
+    model = Fonction
+    success_url = reverse_lazy('fonction_list')
+    template_name = 'crud/confirm_delete.html'
+    model_name = 'Fonction'
+    singular_name = 'Fonction'
+    list_url_name = 'fonction_list'

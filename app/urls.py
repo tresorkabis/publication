@@ -47,4 +47,34 @@ urlpatterns = [
     path('evaluations/ajouter/', views.EvaluationCreateView.as_view(), name='evaluation_create'),
     path('evaluations/<int:pk>/modifier/', views.EvaluationUpdateView.as_view(), name='evaluation_update'),
     path('evaluations/<int:pk>/supprimer/', views.EvaluationDeleteView.as_view(), name='evaluation_delete'),
+
+    # Gestion des utilisateurs (admin)
+    path('admin/utilisateurs/', views.UserListView.as_view(), name='user_list'),
+    path('admin/utilisateurs/ajouter/', views.UserCreateView.as_view(), name='user_create'),
+    path('admin/utilisateurs/<int:pk>/modifier/', views.UserUpdateView.as_view(), name='user_update'),
+    path('admin/utilisateurs/<int:pk>/supprimer/', views.UserDeleteView.as_view(), name='user_delete'),
+
+    # Gestion des personnels (admin)
+    path('admin/personnels/', views.PersonnelListView.as_view(), name='personnel_list'),
+    path('admin/personnels/ajouter/', views.PersonnelCreateView.as_view(), name='personnel_create'),
+    path('admin/personnels/<int:pk>/modifier/', views.PersonnelUpdateView.as_view(), name='personnel_update'),
+    path('admin/personnels/<int:pk>/supprimer/', views.PersonnelDeleteView.as_view(), name='personnel_delete'),
+
+    # Gestion des étudiants (admin)
+    path('admin/etudiants/', views.EtudiantListView.as_view(), name='etudiant_list'),
+    path('admin/etudiants/ajouter/', views.EtudiantCreateView.as_view(), name='etudiant_create'),
+    path('admin/etudiants/<int:pk>/modifier/', views.EtudiantUpdateView.as_view(), name='etudiant_update'),
+    path('admin/etudiants/<int:pk>/supprimer/', views.EtudiantDeleteView.as_view(), name='etudiant_delete'),
+
+    # Gestion des rôles (admin)
+    path('admin/roles/', views.RoleListView.as_view(), name='role_list'),
+    path('admin/roles/ajouter/', views.RoleCreateView.as_view(), name='role_create'),
+    path('admin/roles/<int:pk>/modifier/', views.RoleUpdateView.as_view(), name='role_update'),
+    path('admin/roles/<int:pk>/supprimer/', views.RoleDeleteView.as_view(), name='role_delete'),
+
+    # Gestion des fonctions (admin)
+    path('admin/fonctions/', views.FonctionListView.as_view(), name='fonction_list'),
+    path('admin/fonctions/ajouter/', views.FonctionCreateView.as_view(), name='fonction_create'),
+    path('admin/fonctions/<int:pk>/modifier/', views.FonctionUpdateView.as_view(), name='fonction_update'),
+    path('admin/fonctions/<int:pk>/supprimer/', views.FonctionDeleteView.as_view(), name='fonction_delete'),
 ]

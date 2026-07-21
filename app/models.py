@@ -62,6 +62,11 @@ class User(AbstractUser):
     def has_role(self, libelle):
         return libelle in self.role_labels
 
+    def get_roles_display(self):
+        """Retourne les rôles formatés pour l'affichage dans les listes CRUD"""
+        return ", ".join(self.role_labels) if self.role_labels else "-"
+    get_roles_display.short_description = 'Rôles'
+
 class Role(models.Model):
     idrole = models.AutoField(primary_key=True)
     libelle = models.CharField(max_length=100, unique=True)
@@ -145,6 +150,20 @@ class Inscription(models.Model):
     def __str__(self):
         return f"{self.etudiant.user.first_name} {self.etudiant.user.last_name} - {self.promotion.libelle}"
     
+class AnneeEtude(models.Model):
+    """Année d'étude dans le système LMD : L1, L2, L3"""
+    code = models.CharField(max_length=5, unique=True, verbose_name="Code")
+    libelle = models.CharField(max_length=100, verbose_name="Libellé")
+    ordre = models.PositiveIntegerField(default=1, verbose_name="Ordre d'affichage")
+
+    class Meta:
+        verbose_name = "Année d'étude"
+        verbose_name_plural = "Années d'étude"
+        ordering = ['ordre']
+
+    def __str__(self):
+        return self.libelle
+
 class Semestre(models.Model):
     libelle = models.CharField(max_length=50)
     
@@ -154,12 +173,56 @@ class Semestre(models.Model):
 class Cours(models.Model):
     filiere = models.ForeignKey(Filiere, on_delete=models.CASCADE, related_name='cours')
     semestre = models.ForeignKey(Semestre, on_delete=models.CASCADE)
+    annee_etude = models.ForeignKey(AnneeEtude, on_delete=models.CASCADE, null=True, blank=True, related_name='cours', verbose_name="Année d'étude")
     code = models.CharField(max_length=20)
     libelle = models.CharField(max_length=100)
     volume_horaire = models.IntegerField()
+    credit = models.PositiveIntegerField(default=0, verbose_name="Crédit")
 
     def __str__(self):
         return self.libelle
+
+class CalendrierAcademique(models.Model):
+    class TypePeriode(models.TextChoices):
+        S1 = 'S1', 'Session 1er semestre'
+        RATTRAPAGE_S1 = 'RATTRAPAGE_S1', 'Rattrapage 1er semestre'
+        S2 = 'S2', 'Session 2ème semestre'
+        RATTRAPAGE_S2 = 'RATTRAPAGE_S2', 'Rattrapage 2ème semestre'
+        RATTRAPAGE_CREDITS = 'RATTRAPAGE_CREDITS', 'Rattrapage de crédits'
+
+    filiere = models.ForeignKey(Filiere, on_delete=models.CASCADE, related_name='calendriers')
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='calendriers')
+    semestre = models.ForeignKey(Semestre, on_delete=models.CASCADE, related_name='calendriers')
+    annee_etude = models.ForeignKey(AnneeEtude, on_delete=models.CASCADE, null=True, blank=True, related_name='calendriers', verbose_name="Année d'étude")
+    annee_academique = models.CharField(max_length=9, verbose_name="Année académique")
+    type_periode = models.CharField(max_length=20, choices=TypePeriode.choices, default=TypePeriode.S1, verbose_name="Type de période")
+    date_debut = models.DateField(verbose_name="Date de début")
+    date_fin = models.DateField(verbose_name="Date de fin")
+    intitule = models.CharField(max_length=200, verbose_name="Intitulé de la période")
+    est_actif = models.BooleanField(default=True, verbose_name="Période active")
+
+    class Meta:
+        verbose_name = "Calendrier académique"
+        verbose_name_plural = "Calendriers académiques"
+        ordering = ['annee_academique', 'annee_etude', 'date_debut']
+
+    def __str__(self):
+        annee = f"{self.annee_etude} - " if self.annee_etude else ""
+        return f"{self.get_type_periode_display()} - {annee}{self.filiere.libelle} ({self.annee_academique})"
+
+    @property
+    def est_en_cours(self):
+        from django.utils import timezone
+        today = timezone.now().date()
+        return self.date_debut <= today <= self.date_fin
+
+    @property
+    def est_rattrapage(self):
+        return self.type_periode in ['RATTRAPAGE_S1', 'RATTRAPAGE_S2', 'RATTRAPAGE_CREDITS']
+
+    @property
+    def est_rattrapage_credits(self):
+        return self.type_periode == 'RATTRAPAGE_CREDITS'
 
 class TypeEvaluation(models.Model):
     libelle = models.CharField(max_length=100)
@@ -171,9 +234,18 @@ class Evaluation(models.Model):
     type_evaluation = models.ForeignKey(TypeEvaluation, on_delete=models.CASCADE)
     cours = models.ForeignKey(Cours, on_delete=models.CASCADE)
     date = models.DateField()
+    duree_minutes = models.PositiveIntegerField(default=120, verbose_name="Durée (minutes)")
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(blank=True, null=True)
     coefficient = models.PositiveIntegerField(default=1)
+    calendrier = models.ForeignKey(
+        CalendrierAcademique,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='evaluations',
+        verbose_name="Période du calendrier"
+    )
 
     @property
     def type_eval(self):

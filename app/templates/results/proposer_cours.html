@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-6 text-white">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                    <h2 class="text-2xl font-semibold">Proposition de cours aux enseignants</h2>
+                    <p class="text-sm text-green-100 mt-1">Proposez un cours à un enseignant de votre filière</p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour au tableau de bord
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {% for field in form %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="text-sm text-red-600 mt-1">{{ field.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div class="pt-2">
+                    <button type="submit" class="inline-flex items-center rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Proposer le cours
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

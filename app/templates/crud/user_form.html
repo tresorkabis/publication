@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-6 text-white">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                    <h2 class="text-2xl font-semibold">{{ action }} un utilisateur</h2>
+                    <p class="text-sm text-purple-100 mt-1">Gestion des comptes utilisateurs</p>
+                </div>
+                <a href="{% url 'user_list' %}" class="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour à la liste
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for field in form %}
+                    <div class="{% if field.name in 'is_active,is_validated,is_staff,is_superuser' %}md:col-span-1{% else %}md:col-span-2{% endif %}">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ field.label }}</label>
+                        {% if field.name in 'is_active,is_validated,is_staff,is_superuser' %}
+                            <div class="flex items-center mt-1">
+                                {{ field }}
+                                <span class="ml-2 text-sm text-gray-500">
+                                    {% if field.name == 'is_active' %}Activer le compte
+                                    {% elif field.name == 'is_validated' %}Compte validé
+                                    {% elif field.name == 'is_staff' %}Accès au personnel
+                                    {% elif field.name == 'is_superuser' %}Superutilisateur
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        {% if field.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ field.errors|join:", " }}</p>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <p class="text-xs text-gray-400 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="pt-2 border-t border-gray-100 flex gap-3">
+                    <button type="submit" class="inline-flex items-center rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">
+                        <i class="fas fa-save mr-2"></i>
+                        {{ action }}
+                    </button>
+                    <a href="{% url 'user_list' %}" class="inline-flex items-center rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200">
+                        <i class="fas fa-times mr-2"></i>
+                        Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

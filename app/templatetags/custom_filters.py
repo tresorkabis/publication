@@ -4,8 +4,12 @@ register = template.Library()
 
 @register.filter
 def get_attr(obj, field_name):
-    """Récupère un attribut d'un objet"""
+    """Récupère un attribut ou appelle une méthode d'un objet"""
     try:
-        return getattr(obj, field_name)
+        attr = getattr(obj, field_name)
+        if callable(attr):
+            result = attr()
+            return result
+        return attr
     except AttributeError:
         return None

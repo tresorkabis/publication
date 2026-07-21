@@ -1,40 +1,377 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .periode-card {
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+    }
+    .periode-card:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .periode-card.active {
+        border-left-color: #10b981;
+        background: linear-gradient(135deg, #f0fdf4, #ffffff);
+    }
+    .periode-card.upcoming {
+        border-left-color: #3b82f6;
+        background: linear-gradient(135deg, #eff6ff, #ffffff);
+    }
+    .periode-card.past {
+        border-left-color: #9ca3af;
+        background: #f9fafb;
+    }
+    .periode-card.rattrapage {
+        border-left-color: #f59e0b;
+    }
+    .periode-card.credits {
+        border-left-color: #ef4444;
+    }
+    .badge-session {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .badge-session.normale { background: #d1fae5; color: #065f46; }
+    .badge-session.rattrapage { background: #fef3c7; color: #92400e; }
+    .badge-session.credits { background: #fee2e2; color: #991b1b; }
+    .horaire-cell {
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6 text-white">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                    <h2 class="text-2xl font-semibold">Planification des examens</h2>
-                    <p class="text-sm text-blue-100 mt-1">Programmez un nouvel examen pour votre filière</p>
-                </div>
-                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white">
-                    <i class="fas fa-arrow-left"></i>
-                    Retour au tableau de bord
-                </a>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                {{ message }}
             </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- COLONNE GAUCHE : Formulaire -->
+        <div class="lg:col-span-1 space-y-4">
+            
+            <!-- Carte Formulaire -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-calendar-plus mr-2"></i>
+                        Planifier un examen
+                    </h2>
+                    <p class="text-sm text-blue-100 mt-1">Calendrier académique LMD</p>
+                </div>
+
+                <div class="p-5">
+                    <form method="post" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <!-- 1. Période du calendrier (en premier) -->
+                        <div class="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                            <label class="block text-sm font-semibold text-blue-800 mb-2">
+                                <i class="fas fa-calendar-alt mr-1"></i> {{ form.calendrier.label }}
+                            </label>
+                            {{ form.calendrier }}
+                            {% if form.calendrier.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ form.calendrier.errors|join:", " }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 2. Cours -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.cours.label }}</label>
+                            {{ form.cours }}
+                            {% if form.cours.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ form.cours.errors|join:", " }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 3. Type évaluation -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.type_evaluation.label }}</label>
+                            {{ form.type_evaluation }}
+                            {% if form.type_evaluation.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ form.type_evaluation.errors|join:", " }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 4. Date -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.date.label }}</label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ form.date.errors|join:", " }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 5. Durée -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.duree_minutes.label }}</label>
+                            {{ form.duree_minutes }}
+                            {% if form.duree_minutes.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ form.duree_minutes.errors|join:", " }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 6. Coefficient -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.coefficient.label }}</label>
+                            {{ form.coefficient }}
+                            {% if form.coefficient.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ form.coefficient.errors|join:", " }}</p>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition shadow-sm">
+                            <i class="fas fa-save mr-2"></i>
+                            Enregistrer l'examen
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Légende des sessions -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    Sessions LMD
+                </h3>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <div class="flex items-center gap-2">
+                        <span class="badge-session normale">S1/S2</span> Session normale
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="badge-session rattrapage">Ratt.</span> Rattrapage semestre
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="badge-session credits">Créd.</span> Rattrapage de crédits
+                    </div>
+                    <hr class="my-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Période en cours
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Période à venir
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <div class="p-6">
-            <form method="post" class="space-y-4">
-                {% csrf_token %}
-                {% for field in form %}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <p class="text-sm text-red-600 mt-1">{{ field.errors|join:", " }}</p>
+        <!-- COLONNE DROITE : Calendrier + Tableau -->
+        <div class="lg:col-span-2 space-y-4">
+
+            <!-- CALENDRIER ACADÉMIQUE LMD -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 text-white">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            Calendrier académique — Sessions LMD
+                        </h3>
+                        <span class="text-xs text-emerald-100 font-medium">2024-2025</span>
+                    </div>
+                </div>
+                <div class="p-5">
+                    {% if calendriers_groupes %}
+                        {% for annee, cal_list in calendriers_groupes.items %}
+                        <div class="mb-5 last:mb-0">
+                            <h4 class="font-bold text-gray-800 mb-3 flex items-center text-sm uppercase tracking-wider">
+                                <i class="fas fa-graduation-cap text-teal-600 mr-2"></i>
+                                {{ annee }}
+                            </h4>
+                            <div class="space-y-2">
+                                {% for cal in cal_list %}
+                                <div class="periode-card flex items-start p-4 rounded-xl 
+                                    {% if cal.est_en_cours %}active
+                                    {% elif cal.date_debut > today %}upcoming
+                                    {% else %}past{% endif %}
+                                    {% if cal.est_rattrapage_credits %}credits
+                                    {% elif cal.est_rattrapage %}rattrapage{% endif %}">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="font-semibold text-sm text-gray-800">{{ cal.get_type_periode_display }}</span>
+                                            {% if cal.est_rattrapage_credits %}
+                                                <span class="badge-session credits">Crédits</span>
+                                            {% elif cal.est_rattrapage %}
+                                                <span class="badge-session rattrapage">Rattrapage</span>
+                                            {% else %}
+                                                <span class="badge-session normale">Session normale</span>
+                                            {% endif %}
+                                            {% if cal.est_en_cours %}
+                                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold animate-pulse">● En cours</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex items-center gap-3 mt-1.5 text-sm">
+                                            <span class="text-gray-500">
+                                                <i class="far fa-calendar text-gray-400 mr-1"></i>
+                                                {{ cal.date_debut|date:"d/m/Y" }}
+                                            </span>
+                                            <span class="text-gray-300">→</span>
+                                            <span class="text-gray-500">
+                                                {{ cal.date_fin|date:"d/m/Y" }}
+                                            </span>
+                                            <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                                                {{ cal.promotion.libelle }}
+                                            </span>
+                                        </div>
+                                        <!-- Durée de la période -->
+                                        <div class="mt-1.5 text-xs text-gray-400">
+                                            <i class="far fa-clock mr-1"></i>
+                                            {{ cal.date_debut|timesince:cal.date_fin }}
+                                        </div>
+                                    </div>
+                                    <div class="text-right flex-shrink-0 ml-4">
+                                        <span class="text-xs text-gray-400 font-medium">{{ cal.semestre.libelle }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-calendar-times text-gray-400 text-xl"></i>
+                            </div>
+                            <p class="text-gray-500 font-medium">Aucune période définie</p>
+                            <p class="text-gray-400 text-sm mt-1">Créez d'abord le calendrier académique dans l'administration.</p>
+                        </div>
                     {% endif %}
                 </div>
-                {% endfor %}
-                <div class="pt-2">
-                    <button type="submit" class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                        <i class="fas fa-calendar-plus mr-2"></i>
-                        Enregistrer l’examen
-                    </button>
+            </div>
+
+            <!-- TABLEAU DES EXAMENS PLANIFIÉS -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold flex items-center">
+                                <i class="fas fa-clipboard-list mr-2"></i>
+                                Examens planifiés
+                            </h2>
+                            <p class="text-xs text-indigo-200 mt-0.5">Planning des sessions d'examens</p>
+                        </div>
+                        <a href="{% url 'publier_horaires_examens' %}" class="inline-flex items-center gap-1.5 text-xs font-medium bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition">
+                            <i class="fas fa-paper-plane"></i>
+                            Publier
+                        </a>
+                    </div>
                 </div>
-            </form>
+
+                <div class="p-5">
+                    {% if examens_planifies %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                    <th class="p-3 border-b font-semibold">Période / Session</th>
+                                    <th class="p-3 border-b font-semibold">Année</th>
+                                    <th class="p-3 border-b font-semibold">Cours</th>
+                                    <th class="p-3 border-b font-semibold">Date</th>
+                                    <th class="p-3 border-b font-semibold">Durée</th>
+                                    <th class="p-3 border-b font-semibold">Statut</th>
+                                    <th class="p-3 border-b font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for examen in examens_planifies %}
+                                <tr class="hover:bg-indigo-50/30 transition border-b border-gray-100">
+                                    <!-- Période -->
+                                    <td class="p-3">
+                                        {% if examen.calendrier %}
+                                            <div class="flex flex-col">
+                                                {% if examen.calendrier.est_rattrapage_credits %}
+                                                    <span class="badge-session credits text-xs self-start">Rattrapage crédits</span>
+                                                {% elif examen.calendrier.est_rattrapage %}
+                                                    <span class="badge-session rattrapage text-xs self-start">{{ examen.calendrier.get_type_periode_display }}</span>
+                                                {% else %}
+                                                    <span class="badge-session normale text-xs self-start">{{ examen.calendrier.get_type_periode_display }}</span>
+                                                {% endif %}
+                                                <span class="text-xs text-gray-400 mt-1">
+                                                    {{ examen.calendrier.date_debut|date:"d/m" }} → {{ examen.calendrier.date_fin|date:"d/m" }}
+                                                </span>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded">Non défini</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Année -->
+                                    <td class="p-3">
+                                        {% if examen.cours.annee_etude %}
+                                            <span class="text-xs font-bold bg-gray-100 text-gray-700 px-2 py-1 rounded">{{ examen.cours.annee_etude.code }}</span>
+                                        {% else %}
+                                            <span class="text-xs text-gray-400">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Cours -->
+                                    <td class="p-3">
+                                        <span class="font-medium text-sm">{{ examen.cours.libelle }}</span>
+                                        <span class="text-xs text-gray-400 ml-1">({{ examen.cours.credit }} cr.)</span>
+                                    </td>
+                                    <!-- Date -->
+                                    <td class="p-3">
+                                        <span class="text-sm font-medium">{{ examen.date|date:"d/m/Y" }}</span>
+                                    </td>
+                                    <!-- Durée -->
+                                    <td class="p-3">
+                                        {% if examen.duree_minutes >= 60 %}
+                                            <span class="horaire-cell font-bold text-indigo-600">
+                                                {{ examen.duree_minutes|floatformat:0|cut:".0" }}min
+                                            </span>
+                                        {% else %}
+                                            <span class="text-sm text-gray-500">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Statut -->
+                                    <td class="p-3">
+                                        {% if examen.is_published %}
+                                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Publié</span>
+                                        {% else %}
+                                            <span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-bold">Planifié</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Actions -->
+                                    <td class="p-3 text-center">
+                                        <div class="flex justify-center gap-1.5">
+                                            <a href="{% url 'manage_marks' examen.id %}" class="text-indigo-500 hover:text-indigo-700 text-sm p-1.5 hover:bg-indigo-50 rounded-lg transition" title="Gérer">
+                                                <i class="fas fa-tasks"></i>
+                                            </a>
+                                            {% if not examen.is_published %}
+                                            <a href="{% url 'publish_evaluation' examen.id %}" class="text-green-500 hover:text-green-700 text-sm p-1.5 hover:bg-green-50 rounded-lg transition" title="Publier">
+                                                <i class="fas fa-check-circle"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-10">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-calendar text-gray-400 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500 font-medium">Aucun examen planifié</p>
+                        <p class="text-gray-400 text-sm mt-1">Sélectionnez une période dans le calendrier, un cours, et définissez la durée pour planifier un examen.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

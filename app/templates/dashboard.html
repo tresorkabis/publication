@@ -359,6 +359,50 @@
         </div>
     </div>
     {% elif is_chef_filiere %}
+    <!-- PÉRIODES D'EXAMENS - CHEF DE FILIÈRE -->
+    <div class="chart-section" style="margin-bottom: 2rem;{% if periodes_examens %}border-left: 4px solid #10b981;{% endif %}">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-calendar-alt text-emerald-600"></i>
+                Périodes d'examens — {{ chef_filieres.0.libelle|default:"Ma filière" }}
+            </div>
+            <a href="{% url 'planifier_examen' %}" style="color: var(--primary); font-size: 0.875rem; font-weight: 500; text-decoration: none;">
+                Voir tout <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        {% if periodes_examens %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+            {% for periode in periodes_examens %}
+            <div style="background: {% if periode.est_en_cours %}#f0fdf4{% elif periode.date_debut > today %}#eff6ff{% else %}#f9fafb{% endif %}; border: 1px solid {% if periode.est_en_cours %]#86efac{% elif periode.date_debut > today %]#93c5fd{% else %}#e5e7eb{% endif %}; border-radius: 10px; padding: 0.75rem 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if periode.est_en_cours %}#10b981{% elif periode.date_debut > today %}#3b82f6{% else %}#9ca3af{% endif %}; flex-shrink: 0;"></span>
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #1f2937;">{{ periode.get_type_periode_display }}</span>
+                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #e5e7eb; color: #4b5563; font-weight: 500;">{{ periode.promotion.libelle }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #6b7280; margin-left: 1rem;">
+                    <i class="far fa-calendar-alt" style="font-size: 0.7rem;"></i>
+                    <span><strong>Du</strong> {{ periode.date_debut|date:"d/m/Y" }}</span>
+                    <span style="color: #d1d5db;">→</span>
+                    <span><strong>au</strong> {{ periode.date_fin|date:"d/m/Y" }}</span>
+                    {% if periode.est_en_cours %}
+                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 600;">En cours</span>
+                    {% endif %}
+                </div>
+                {% if periode.annee_etude %}
+                <div style="font-size: 0.7rem; color: #9ca3af; margin-left: 1rem; margin-top: 0.15rem;">
+                    <i class="fas fa-graduation-cap"></i> {{ periode.annee_etude.libelle }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
+            Aucune période d'examen définie pour votre filière.
+        </p>
+        {% endif %}
+    </div>
+
     <div class="chart-section" style="margin-bottom: 2rem;">
         <div class="chart-header">
             <div class="chart-title">
@@ -434,10 +478,14 @@
         </div>
         {% endif %}
 
-        <div style="margin-bottom: 1.25rem; display: flex; flex-wrap: gap: 0.75rem;">
+        <div style="margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
             <a href="{% url 'planifier_examen' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary); color: white; padding: 0.75rem 1rem; border-radius: 10px; text-decoration: none; font-weight: 600;">
                 <i class="fas fa-calendar-plus"></i>
                 Planifier un examen
+            </a>
+            <a href="{% url 'proposer_cours' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #059669; color: white; padding: 0.75rem 1rem; border-radius: 10px; text-decoration: none; font-weight: 600;">
+                <i class="fas fa-chalkboard-teacher"></i>
+                Proposer un cours
             </a>
             <a href="{% url 'publier_horaires_examens' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: white; color: var(--primary); border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 10px; text-decoration: none; font-weight: 600;">
                 <i class="fas fa-paper-plane"></i>
@@ -485,6 +533,48 @@
         </div>
     </div>
     {% else %}
+    <!-- PÉRIODES D'EXAMENS - TOUTES FILIÈRES -->
+    <div class="chart-section" style="margin-bottom: 2rem;{% if periodes_examens %}border-left: 4px solid #10b981;{% endif %}">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-calendar-alt text-emerald-600"></i>
+                Périodes d'examens — Toutes les filières
+            </div>
+        </div>
+        {% if periodes_examens %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem;">
+            {% for periode in periodes_examens %}
+            <div style="background: {% if periode.est_en_cours %}#f0fdf4{% elif periode.date_debut > today %}#eff6ff{% else %}#f9fafb{% endif %}; border: 1px solid {% if periode.est_en_cours %]#86efac{% elif periode.date_debut > today %]#93c5fd{% else %}#e5e7eb{% endif %}; border-radius: 10px; padding: 0.75rem 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if periode.est_en_cours %}#10b981{% elif periode.date_debut > today %}#3b82f6{% else %}#9ca3af{% endif %}; flex-shrink: 0;"></span>
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #1f2937;">{{ periode.get_type_periode_display }}</span>
+                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: var(--primary); color: white; font-weight: 500;">{{ periode.filiere.code }}</span>
+                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #e5e7eb; color: #4b5563; font-weight: 500;">{{ periode.promotion.libelle }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #6b7280; margin-left: 1rem;">
+                    <i class="far fa-calendar-alt" style="font-size: 0.7rem;"></i>
+                    <span><strong>Du</strong> {{ periode.date_debut|date:"d/m/Y" }}</span>
+                    <span style="color: #d1d5db;">→</span>
+                    <span><strong>au</strong> {{ periode.date_fin|date:"d/m/Y" }}</span>
+                    {% if periode.est_en_cours %}
+                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 600;">En cours</span>
+                    {% endif %}
+                </div>
+                {% if periode.annee_etude %}
+                <div style="font-size: 0.7rem; color: #9ca3af; margin-left: 1rem; margin-top: 0.15rem;">
+                    <i class="fas fa-graduation-cap"></i> {{ periode.annee_etude.libelle }} — {{ periode.semestre.libelle }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
+            Aucune période d'examen définie.
+        </p>
+        {% endif %}
+    </div>
+
     <div class="stats-container">
         <div class="stat-card-2024">
             <div class="stat-content">

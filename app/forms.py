@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Evaluation, TypeEvaluation, Cours, Personnel, ProposalCoursEnseignant
+from .models import User, Evaluation, TypeEvaluation, Cours, Personnel, ProposalCoursEnseignant, CalendrierAcademique
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -55,12 +55,14 @@ class UserRegistrationForm(UserCreationForm):
 class PlanificationExamenForm(forms.ModelForm):
     class Meta:
         model = Evaluation
-        fields = ['type_evaluation', 'cours', 'date', 'coefficient']
+        fields = ['calendrier', 'cours', 'type_evaluation', 'date', 'duree_minutes', 'coefficient']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
             'type_evaluation': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
             'cours': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
             'coefficient': forms.NumberInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500', 'min': '1'}),
+            'calendrier': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
+            'duree_minutes': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -68,11 +70,26 @@ class PlanificationExamenForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if filieres is not None:
             self.fields['cours'].queryset = Cours.objects.filter(filiere__in=filieres).order_by('libelle')
+            self.fields['calendrier'].queryset = CalendrierAcademique.objects.filter(
+                filiere__in=filieres,
+                est_actif=True
+            ).order_by('date_debut')
         self.fields['type_evaluation'].queryset = TypeEvaluation.objects.order_by('libelle')
-        self.fields['date'].label = 'Date de l’examen'
-        self.fields['coefficient'].label = 'Coefficient'
+        self.fields['calendrier'].label = 'Période du calendrier académique'
+        self.fields['calendrier'].empty_label = "--- Sélectionnez une période ---"
         self.fields['cours'].label = 'Cours'
-        self.fields['type_evaluation'].label = 'Type d’évaluation'
+        self.fields['type_evaluation'].label = "Type d'évaluation"
+        self.fields['date'].label = 'Date de l’examen'
+        self.fields['duree_minutes'].label = 'Durée'
+        self.fields['duree_minutes'].widget = forms.Select(choices=[
+            (60, '1h'),
+            (90, '1h30'),
+            (120, '2h'),
+            (150, '2h30'),
+            (180, '3h'),
+            (240, '4h'),
+        ], attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'})
+        self.fields['coefficient'].label = 'Coefficient'
 
 
 class PropositionCoursForm(forms.ModelForm):
