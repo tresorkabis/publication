@@ -305,6 +305,7 @@ def planifier_examen(request):
         'examens_planifies': examens_planifies,
         'calendriers': calendriers,
         'calendriers_groupes': calendriers_groupes,
+        'periodes_examens': calendriers,
         'today': timezone.now().date(),
     })
 
