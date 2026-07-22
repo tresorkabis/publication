@@ -254,26 +254,79 @@ class Command(BaseCommand):
     def create_promotions(self):
         filieres = Filiere.objects.all()
         niveaux = ['L1', 'L2', 'L3', 'M1', 'M2']
-        
+
+        # Créer d'abord toutes les promotions
         for filiere in filieres:
             for i, niveau in enumerate(niveaux):
                 annee = 2024 - (len(niveaux) - 1 - i)
-                promo, _ = Promotion.objects.get_or_create(
+                Promotion.objects.get_or_create(
                     filiere=filiere,
                     libelle=f'{niveau} {filiere.code}'
                 )
-                
-                # Inscrire les étudiants de cette filière dans les promotions
-                etudiants = Etudiant.objects.filter(
-                    user__utilisateur_roles__role__libelle='etudiant'
-                )[:20]
-                
-                for etudiant in etudiants:
-                    Inscription.objects.get_or_create(
-                        etudiant=etudiant,
-                        promotion=promo,
-                        defaults={'annee': annee}
-                    )
+
+        # Ensuite, inscrire les étudiants avec une répartition réaliste
+        for filiere in filieres:
+            # Récupérer tous les étudiants de cette filière
+            etudiants = list(Etudiant.objects.filter(
+                user__utilisateur_roles__role__libelle='etudiant',
+                matricule__startswith=f'MAT-{filiere.code}-'
+            ).order_by('matricule'))
+
+            # Répartir les étudiants entre les différents niveaux
+            # L1: étudiants 0-6 (7 étudiants)
+            # L2: étudiants 7-13 (7 étudiants)
+            # L3: étudiants 14-20 (7 étudiants)
+            # M1 et M2: pas d'étudiants pour l'instant (cycle master non implémenté)
+
+            # Étudiants de L1 (uniquement inscription L1)
+            l1_students = etudiants[:7]
+            l1_promo = Promotion.objects.get(filiere=filiere, libelle=f'L1 {filiere.code}')
+            for etudiant in l1_students:
+                Inscription.objects.get_or_create(
+                    etudiant=etudiant,
+                    promotion=l1_promo,
+                    defaults={'annee': '2024-2025'}
+                )
+
+            # Étudiants de L2 (inscriptions L1 et L2)
+            l2_students = etudiants[7:14]
+            l2_promo = Promotion.objects.get(filiere=filiere, libelle=f'L2 {filiere.code}')
+            for etudiant in l2_students:
+                # Inscription L1 (année précédente)
+                Inscription.objects.get_or_create(
+                    etudiant=etudiant,
+                    promotion=l1_promo,
+                    defaults={'annee': '2023-2024'}
+                )
+                # Inscription L2 (année actuelle)
+                Inscription.objects.get_or_create(
+                    etudiant=etudiant,
+                    promotion=l2_promo,
+                    defaults={'annee': '2024-2025'}
+                )
+
+            # Étudiants de L3 (inscriptions L1, L2 et L3)
+            l3_students = etudiants[14:21]
+            l3_promo = Promotion.objects.get(filiere=filiere, libelle=f'L3 {filiere.code}')
+            for etudiant in l3_students:
+                # Inscription L1
+                Inscription.objects.get_or_create(
+                    etudiant=etudiant,
+                    promotion=l1_promo,
+                    defaults={'annee': '2022-2023'}
+                )
+                # Inscription L2
+                Inscription.objects.get_or_create(
+                    etudiant=etudiant,
+                    promotion=l2_promo,
+                    defaults={'annee': '2023-2024'}
+                )
+                # Inscription L3 (année actuelle)
+                Inscription.objects.get_or_create(
+                    etudiant=etudiant,
+                    promotion=l3_promo,
+                    defaults={'annee': '2024-2025'}
+                )
 
     def create_semestres(self):
         self.stdout.write("  📅 Création des semestres...")

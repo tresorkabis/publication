@@ -763,7 +763,17 @@ class PersonnelDeleteView(AdminRequiredMixin, DeleteView):
     singular_name = 'Personnel'
     list_url_name = 'personnel_list'
 
-class EtudiantListView(AdminRequiredMixin, BaseCRUDListView):
+class ChefFiliereOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.has_role('chef de filière')
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        messages.error(self.request, "Accès réservé à l'administrateur ou au chef de filière.")
+        return redirect('dashboard')
+
+class EtudiantListView(ChefFiliereOrAdminMixin, BaseCRUDListView):
     model = Etudiant
     model_name = 'Étudiants'
     singular_name = 'Étudiant'
@@ -781,6 +791,39 @@ class EtudiantListView(AdminRequiredMixin, BaseCRUDListView):
     def get_user(self, obj):
         return obj.user.get_full_name() or obj.user.username
     get_user.short_description = 'Utilisateur'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.has_role('chef de filière') and not self.request.user.is_superuser:
+            # Filtrer pour n'afficher que les étudiants de la/les filière(s) du chef
+            chef_personnel = getattr(self.request.user, 'personnel', None)
+            if chef_personnel:
+                chef_filieres = Filiere.objects.filter(chef=chef_personnel)
+                queryset = queryset.filter(inscriptions__promotion__filiere__in=chef_filieres).distinct()
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Ajouter les filtres par promotion
+        if self.request.user.has_role('chef de filière') and not self.request.user.is_superuser:
+            chef_personnel = getattr(self.request.user, 'personnel', None)
+            if chef_personnel:
+                chef_filieres = Filiere.objects.filter(chef=chef_personnel)
+                context['promotions'] = Promotion.objects.filter(filiere__in=chef_filieres).distinct().order_by('libelle')
+        else:
+            context['promotions'] = Promotion.objects.all().order_by('libelle')
+
+        # Filtrer par promotion si spécifié dans l'URL
+        promotion_id = self.request.GET.get('promotion')
+        if promotion_id:
+            context['selected_promotion'] = int(promotion_id)
+            # Appliquer le filtre directement sur le queryset
+            context['object_list'] = context['object_list'].filter(inscriptions__promotion_id=promotion_id).distinct()
+        else:
+            context['selected_promotion'] = None
+
+        return context
 
 class EtudiantCreateView(AdminRequiredMixin, CreateView):
     model = Etudiant

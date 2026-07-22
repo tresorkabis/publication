@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
+    {% load custom_filters %}
 
 {% block content %}
 <div class="bg-white rounded-3 shadow-sm border p-4">
@@ -15,13 +15,49 @@
         {% endif %}
     </div>
 
-    <div class="table-responsive">
+    {% if promotions %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="promotionFilter" class="col-form-label">Filtrer par promotion :</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select" id="promotionFilter" name="promotion" onchange="this.form.submit()">
+                        <option value="">Toutes les promotions</option>
+                        {% for promotion in promotions %}
+                        <option value="{{ promotion.id }}" {% if selected_promotion == promotion.id %}selected{% endif %}>
+                            {{ promotion.libelle }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if selected_promotion %}
+                <div class="col-auto">
+                    <a href="{% url 'etudiant_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Réinitialiser
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+        <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
                     {% for field_name, field_label in fields %}
                         <th scope="col">{{ field_label }}</th>
                     {% endfor %}
+                    {% if model_name == 'Étudiants' %}
+                        <th scope="col">Nom complet</th>
+                        <th scope="col">Promotions</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Téléphone</th>
+                        <th scope="col">Matricule</th>
+                    {% endif %}
                     <th scope="col">Actions</th>
                 </tr>
             </thead>
@@ -31,6 +67,35 @@
                         {% for field_name, field_label in fields %}
                             <td>{{ obj|get_attr:field_name }}</td>
                         {% endfor %}
+                        {% if model_name == 'Étudiants' %}
+                            <td>
+                                <strong>{{ obj.user.prenom|default:"" }} {{ obj.user.nom|default:"" }} {{ obj.user.postnom|default:"" }}</strong>
+                                <br>
+                                <small class="text-muted">{{ obj.user.username }}</small>
+                            </td>
+                            <td>
+                                {% with inscriptions=obj.inscriptions.all %}
+                                {% if inscriptions %}
+                                    {% with inscriptions_list=inscriptions %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill">
+                                        {{ inscriptions_list|last.promotion.libelle }} ({{ inscriptions_list|last.annee }})
+                                    </span>
+                                    {% if inscriptions|length > 1 %}
+                                        <br>
+                                        <small class="text-muted">+{{ inscriptions|length|subtract:1 }} autre(s) inscription(s)</small>
+                                    {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill">
+                                        Aucune inscription
+                                    </span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>{{ obj.user.email }}</td>
+                            <td>{{ obj.user.tel|default:"-" }}</td>
+                            <td>{{ obj.matricule|default:"-" }}</td>
+                        {% endif %}
                         <td>
                             <div class="d-flex gap-2">
                                 {% if update_url_name %}
@@ -48,7 +113,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="{{ fields|length|add:'1' }}" class="text-center text-muted py-4">Aucun élément trouvé.</td>
+                        <td colspan="{% if model_name == 'Étudiants' %}{{ fields|length|add:'5' }}{% else %}{{ fields|length|add:'1' }}{% endif %}" class="text-center text-muted py-4">Aucun élément trouvé.</td>
                     </tr>
                 {% endfor %}
             </tbody>

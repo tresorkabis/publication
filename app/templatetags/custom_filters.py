@@ -13,3 +13,11 @@ def get_attr(obj, field_name):
         return attr
     except AttributeError:
         return None
+
+@register.filter
+def subtract(value, arg):
+    """Soustrait deux valeurs"""
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
+        return 0

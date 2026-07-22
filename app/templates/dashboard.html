@@ -86,6 +86,18 @@
         box-shadow: var(--shadow-lg);
     }
 
+    .stat-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .stat-card-link:hover .stat-card-2024 {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        cursor: pointer;
+    }
+
     .stat-content {
         display: flex;
         justify-content: space-between;
@@ -151,6 +163,10 @@
         box-shadow: var(--shadow);
         border: 1px solid var(--border);
         margin-bottom: 2rem;
+    }
+
+    .chart-section.with-border {
+        border-left: 4px solid #10b981;
     }
 
     .chart-header {
@@ -253,6 +269,141 @@
         padding: 2rem;
         color: #6b7280;
         font-size: 0.875rem;
+    }
+
+    /* Boutons d'action */
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-action i {
+        font-size: 0.9rem;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-success {
+        background: #059669;
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+
+    .btn-outline {
+        background: white;
+        color: var(--primary);
+        border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+        background: var(--light);
+        border-color: var(--primary);
+    }
+
+    /* Grille des périodes d'examens */
+    .periodes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .periode-card {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+    }
+
+    .periode-card.en-cours {
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+    }
+
+    .periode-card.a-venir {
+        background: #eff6ff;
+        border: 1px solid #93c5fd;
+    }
+
+    .periode-card.passee {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+    }
+
+    .periode-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+    .periode-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .periode-indicator.en-cours {
+        background: #10b981;
+    }
+
+    .periode-indicator.a-venir {
+        background: #3b82f6;
+    }
+
+    .periode-indicator.passee {
+        background: #9ca3af;
+    }
+
+    .periode-type {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #1f2937;
+    }
+
+    .periode-dates {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-left: 1rem;
+    }
+
+    .periode-dates i {
+        font-size: 0.7rem;
+    }
+
+    .periode-details {
+        font-size: 0.7rem;
+        color: #9ca3af;
+        margin-left: 1rem;
+        margin-top: 0.15rem;
     }
 
     @media (max-width: 1024px) {
@@ -359,50 +510,6 @@
         </div>
     </div>
     {% elif is_chef_filiere %}
-    <!-- PÉRIODES D'EXAMENS - CHEF DE FILIÈRE -->
-    <div class="chart-section" style="margin-bottom: 2rem;{% if periodes_examens %}border-left: 4px solid #10b981;{% endif %}">
-        <div class="chart-header">
-            <div class="chart-title">
-                <i class="fas fa-calendar-alt text-emerald-600"></i>
-                Périodes d'examens — {{ chef_filieres.0.libelle|default:"Ma filière" }}
-            </div>
-            <a href="{% url 'planifier_examen' %}" style="color: var(--primary); font-size: 0.875rem; font-weight: 500; text-decoration: none;">
-                Voir tout <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-        {% if periodes_examens %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
-            {% for periode in periodes_examens %}
-            <div style="background: {% if periode.est_en_cours %}#f0fdf4{% elif periode.date_debut > today %}#eff6ff{% else %}#f9fafb{% endif %}; border: 1px solid {% if periode.est_en_cours %}#86efac{% elif periode.date_debut > today %}#93c5fd{% else %}#e5e7eb{% endif %}; border-radius: 10px; padding: 0.75rem 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if periode.est_en_cours %}#10b981{% elif periode.date_debut > today %}#3b82f6{% else %}#9ca3af{% endif %}; flex-shrink: 0;"></span>
-                    <span style="font-weight: 600; font-size: 0.85rem; color: #1f2937;">{{ periode.get_type_periode_display }}</span>
-                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #e5e7eb; color: #4b5563; font-weight: 500;">{{ periode.promotion.libelle }}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #6b7280; margin-left: 1rem;">
-                    <i class="far fa-calendar-alt" style="font-size: 0.7rem;"></i>
-                    <span><strong>Du</strong> {{ periode.date_debut|date:"d/m/Y" }}</span>
-                    <span style="color: #d1d5db;">→</span>
-                    <span><strong>au</strong> {{ periode.date_fin|date:"d/m/Y" }}</span>
-                    {% if periode.est_en_cours %}
-                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 600;">En cours</span>
-                    {% endif %}
-                </div>
-                {% if periode.annee_etude %}
-                <div style="font-size: 0.7rem; color: #9ca3af; margin-left: 1rem; margin-top: 0.15rem;">
-                    <i class="fas fa-graduation-cap"></i> {{ periode.annee_etude.libelle }}
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
-            Aucune période d'examen définie pour votre filière.
-        </p>
-        {% endif %}
-    </div>
-
     <div class="chart-section" style="margin-bottom: 2rem;">
         <div class="chart-header">
             <div class="chart-title">
@@ -421,50 +528,58 @@
         </div>
 
         <div class="stats-container" style="margin-bottom: 1.5rem;">
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Étudiants</h3>
-                        <div class="value">{{ chef_students_count }}</div>
-                    </div>
-                    <div class="stat-icon students">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Cours</h3>
-                        <div class="value">{{ chef_courses_count }}</div>
-                    </div>
-                    <div class="stat-icon users">
-                        <i class="fas fa-book-open"></i>
+            <a href="{% url 'etudiant_list' %}" class="stat-card-link">
+                <div class="stat-card-2024">
+                    <div class="stat-content">
+                        <div class="stat-info">
+                            <h3>Étudiants</h3>
+                            <div class="value">{{ chef_students_count }}</div>
+                        </div>
+                        <div class="stat-icon students">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Évaluations</h3>
-                        <div class="value">{{ chef_evaluations_count }}</div>
-                    </div>
-                    <div class="stat-icon staff">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Publiées</h3>
-                        <div class="value">{{ chef_published_evaluations_count }}</div>
-                    </div>
-                    <div class="stat-icon filieres">
-                        <i class="fas fa-check-circle"></i>
+            </a>
+            <a href="{% url 'cours_list' %}" class="stat-card-link">
+                <div class="stat-card-2024">
+                    <div class="stat-content">
+                        <div class="stat-info">
+                            <h3>Cours</h3>
+                            <div class="value">{{ chef_courses_count }}</div>
+                        </div>
+                        <div class="stat-icon users">
+                            <i class="fas fa-book-open"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
+            <a href="{% url 'evaluation_list' %}" class="stat-card-link">
+                <div class="stat-card-2024">
+                    <div class="stat-content">
+                        <div class="stat-info">
+                            <h3>Évaluations</h3>
+                            <div class="value">{{ chef_evaluations_count }}</div>
+                        </div>
+                        <div class="stat-icon staff">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <a href="{% url 'evaluation_list' %}?published=true" class="stat-card-link">
+                <div class="stat-card-2024">
+                    <div class="stat-content">
+                        <div class="stat-info">
+                            <h3>Publiées</h3>
+                            <div class="value">{{ chef_published_evaluations_count }}</div>
+                        </div>
+                        <div class="stat-icon filieres">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
         </div>
 
         {% if chef_promotions %}
@@ -478,18 +593,10 @@
         </div>
         {% endif %}
 
-        <div style="margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
-            <a href="{% url 'planifier_examen' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary); color: white; padding: 0.75rem 1rem; border-radius: 10px; text-decoration: none; font-weight: 600;">
-                <i class="fas fa-calendar-plus"></i>
-                Planifier un examen
-            </a>
-            <a href="{% url 'proposer_cours' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #059669; color: white; padding: 0.75rem 1rem; border-radius: 10px; text-decoration: none; font-weight: 600;">
+        <div class="action-buttons">
+            <a href="{% url 'proposer_cours' %}" class="btn-action btn-success">
                 <i class="fas fa-chalkboard-teacher"></i>
                 Proposer un cours
-            </a>
-            <a href="{% url 'publier_horaires_examens' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: white; color: var(--primary); border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 10px; text-decoration: none; font-weight: 600;">
-                <i class="fas fa-paper-plane"></i>
-                Publier les horaires
             </a>
         </div>
 
@@ -534,7 +641,7 @@
     </div>
     {% else %}
     <!-- PÉRIODES D'EXAMENS - TOUTES FILIÈRES -->
-    <div class="chart-section" style="margin-bottom: 2rem;{% if periodes_examens %}border-left: 4px solid #10b981;{% endif %}">
+    <div class="chart-section {% if periodes_examens %}with-border{% endif %}" style="margin-bottom: 2rem;">
         <div class="chart-header">
             <div class="chart-title">
                 <i class="fas fa-calendar-alt text-emerald-600"></i>
@@ -542,26 +649,26 @@
             </div>
         </div>
         {% if periodes_examens %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem;">
+        <div class="periodes-grid">
             {% for periode in periodes_examens %}
-            <div style="background: {% if periode.est_en_cours %}#f0fdf4{% elif periode.date_debut > today %}#eff6ff{% else %}#f9fafb{% endif %}; border: 1px solid {% if periode.est_en_cours %}#86efac{% elif periode.date_debut > today %}#93c5fd{% else %}#e5e7eb{% endif %}; border-radius: 10px; padding: 0.75rem 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if periode.est_en_cours %}#10b981{% elif periode.date_debut > today %}#3b82f6{% else %}#9ca3af{% endif %}; flex-shrink: 0;"></span>
-                    <span style="font-weight: 600; font-size: 0.85rem; color: #1f2937;">{{ periode.get_type_periode_display }}</span>
-                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: var(--primary); color: white; font-weight: 500;">{{ periode.filiere.code }}</span>
-                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #e5e7eb; color: #4b5563; font-weight: 500;">{{ periode.promotion.libelle }}</span>
+            <div class="periode-card {% if periode.est_en_cours %}en-cours{% elif periode.date_debut > today %}a-venir{% else %}passee{% endif %}">
+                <div class="periode-header">
+                    <span class="periode-indicator {% if periode.est_en_cours %}en-cours{% elif periode.date_debut > today %}a-venir{% else %}passee{% endif %}"></span>
+                    <span class="periode-type">{{ periode.get_type_periode_display }}</span>
+                    <span class="badge-2024" style="background: var(--primary); color: white;">{{ periode.filiere.code }}</span>
+                    <span class="badge-2024 badge-secondary-2024">{{ periode.promotion.libelle }}</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #6b7280; margin-left: 1rem;">
-                    <i class="far fa-calendar-alt" style="font-size: 0.7rem;"></i>
+                <div class="periode-dates">
+                    <i class="far fa-calendar-alt"></i>
                     <span><strong>Du</strong> {{ periode.date_debut|date:"d/m/Y" }}</span>
-                    <span style="color: #d1d5db;">→</span>
+                    <span>→</span>
                     <span><strong>au</strong> {{ periode.date_fin|date:"d/m/Y" }}</span>
                     {% if periode.est_en_cours %}
-                    <span style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 600;">En cours</span>
+                    <span class="badge-2024" style="background: #d1fae5; color: #065f46;">En cours</span>
                     {% endif %}
                 </div>
                 {% if periode.annee_etude %}
-                <div style="font-size: 0.7rem; color: #9ca3af; margin-left: 1rem; margin-top: 0.15rem;">
+                <div class="periode-details">
                     <i class="fas fa-graduation-cap"></i> {{ periode.annee_etude.libelle }} — {{ periode.semestre.libelle }}
                 </div>
                 {% endif %}
