@@ -1,65 +1,124 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container" style="max-width: 800px;">
-    <div class="bg-white rounded-3 shadow-sm border p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h4 fw-bold text-dark">{{ action }} {{ model_name }}</h1>
-                <p class="text-muted small">Remplissez le formulaire ci-dessous.</p>
-            </div>
-            <a href="{% if list_url_name %}{% url list_url_name %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-arrow-left me-2"></i>Retour
-            </a>
-        </div>
-
-        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-            {% csrf_token %}
-            
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ form.non_field_errors }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container" style="max-width: 900px;">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 fw-bold text-dark mb-0">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>{{ action }} {{ model_name }}
+                    </h2>
+                    <p class="text-muted small mt-1 mb-0">Remplissez les informations ci-dessous</p>
                 </div>
-            {% endif %}
-
-            <div class="row g-3">
-                {% for field in form %}
-                    {% if field.widget_type != 'hidden' %}
-                        <div class="{% if field.field.widget.input_type == 'file' %}col-12{% else %}col-md-6{% endif %}">
-                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
-                                {{ field.label }}
-                                {% if field.field.required %}
-                                    <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ error }}
-                                </div>
-                            {% endfor %}
-                            {% if field.help_text %}
-                                <div class="form-text text-muted">
-                                    {{ field.help_text }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        {{ field }}
-                    {% endif %}
-                {% endfor %}
-            </div>
-
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary px-4 py-2">
-                    <i class="fas fa-save me-2"></i>{{ action }}
-                </button>
-                <a href="{% if list_url_name %}{% url list_url_name %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline-secondary px-4 py-2">
-                    Annuler
+                <a href="{% if list_url_name %}{% url list_url_name %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Retour
                 </a>
             </div>
-        </form>
+        </div>
+
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        {{ form.non_field_errors }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    {% for field in form %}
+                        {% if field.widget_type != 'hidden' %}
+                            <div class="{% if field.field.widget.input_type == 'file' %}col-12{% elif field.name == 'filiere' or field.name == 'semestre' or field.name == 'type_evaluation' or field.name == 'cours' %}col-12{% else %}col-md-6{% endif %}">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-dark">
+                                    {{ field.label }}
+                                    {% if field.field.required %}
+                                        <span class="text-danger">*</span>
+                                    {% endif %}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border">
+                                        <i class="fas fa-{% if field.name == 'filiere' or field.name == 'semestre' or field.name == 'type_evaluation' or field.name == 'cours' %}layer-group{% elif field.name == 'code' %}hashtag{% elif field.name == 'libelle' or field.name == 'intitule' %}font{% elif field.name == 'description' %}align-left{% elif field.name == 'volume_horaire' %}clock{% elif field.name == 'date' %}calendar{% elif field.name == 'chef' %}user-tie{% elif field.name == 'user' %}user{% elif field.name == 'fonction' %}briefcase{% elif field.name == 'grade' %}award{% elif field.name == 'matricule' %}id-card{% elif field.name == 'photo' %}image{% elif field.name == 'username' %}at{% elif field.name == 'email' %}envelope{% elif field.name == 'password' %}lock{% elif field.name == 'tel' %}phone{% elif field.name == 'mat' %}id-badge{% elif field.name == 'adresse' %}map-marker-alt{% elif field.name == 'sexe' %}venus-mars{% else %}pen{% endif %} text-muted"></i>
+                                    </span>
+                                    {{ field }}
+                                </div>
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block text-danger small">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>{{ error }}
+                                    </div>
+                                {% endfor %}
+                                {% if field.help_text %}
+                                    <div class="form-text text-muted small">
+                                        <i class="fas fa-info-circle me-1"></i>{{ field.help_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>{{ action }}
+                    </button>
+                    <a href="{% if list_url_name %}{% url list_url_name %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<style>
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #1c6ca8;
+        box-shadow: 0 0 0 3px rgba(28, 108, 168, 0.1);
+    }
+    
+    .input-group-text {
+        border-radius: 8px 0 0 8px;
+        border: 1px solid #d1d5db;
+        background: #f9fafb;
+    }
+    
+    .form-control:not(:placeholder-shown) {
+        border-color: #10b981;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #0d3b66, #1c6ca8);
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 59, 102, 0.2);
+    }
+    
+    .card {
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        border-radius: 12px 12px 0 0 !important;
+    }
+</style>
 {% endblock %}

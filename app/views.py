@@ -63,6 +63,10 @@ def profile(request):
 
 @login_required
 def dashboard(request):
+    # Rediriger les enseignants vers leur dashboard spécifique
+    if hasattr(request.user, 'personnel') and request.user.has_role('enseignant'):
+        return redirect('dashboard_enseignant')
+    
     if hasattr(request.user, 'etudiant'):
         student = request.user.etudiant
         student_cotations = (
@@ -309,6 +313,213 @@ def planifier_examen(request):
     })
 
 @login_required
+def dashboard_enseignant(request):
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    
+    # Cours assignés à l'enseignant
+    cours_assignes = Cours.objects.filter(propositions_enseignants__enseignant=enseignant, propositions_enseignants__est_accepte=True).distinct().select_related('filiere', 'semestre', 'annee_etude')
+    
+    # Évaluations à venir pour les cours de l'enseignant
+    evaluations_a_venir = Evaluation.objects.filter(
+        cours__in=cours_assignes,
+        is_published=False
+    ).select_related('cours', 'type_evaluation').order_by('date')[:10]
+    
+    # Évaluations publiées récemment
+    evaluations_publiees = Evaluation.objects.filter(
+        cours__in=cours_assignes,
+        is_published=True
+    ).select_related('cours', 'type_evaluation').order_by('-published_at')[:10]
+    
+    # Propositions de cours en attente
+    propositions_en_attente = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        est_accepte=False
+    ).select_related('cours', 'cours__filiere').order_by('-date_proposition')[:5]
+    
+    # Propositions acceptées
+    propositions_acceptees = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        est_accepte=True
+    ).select_related('cours', 'cours__filiere').order_by('-date_proposition')[:5]
+    
+    context = {
+        'is_enseignant': True,
+        'enseignant': enseignant,
+        'cours_assignes': cours_assignes,
+        'cours_count': cours_assignes.count(),
+        'evaluations_a_venir': evaluations_a_venir,
+        'evaluations_publiees': evaluations_publiees,
+        'propositions_en_attente': propositions_en_attente,
+        'propositions_acceptees': propositions_acceptees,
+    }
+    
+    return render(request, 'dashboard/dashboard_enseignant.html', context)
+
+@login_required
+def cours_enseignant(request):
+    # Vérifier si l'utilisateur est un enseignant
+    print(f"cours_enseignant: user={request.user.username}, has_personnel={hasattr(request.user, 'personnel')}")
+    
+    if not hasattr(request.user, 'personnel'):
+        messages.error(request, "Accès réservé au personnel.")
+        return redirect('dashboard')
+    
+    # Vérifier le rôle enseignant
+    role_labels = getattr(request.user, 'role_labels', [])
+    print(f"cours_enseignant: role_labels={role_labels}")
+    
+    if 'enseignant' not in role_labels:
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    
+    # Récupérer les cours assignés à l'enseignant
+    cours_assignes = Cours.objects.filter(
+        propositions_enseignants__enseignant=enseignant,
+        propositions_enseignants__est_accepte=True
+    ).distinct().select_related('filiere', 'semestre', 'annee_etude')
+    
+    print(f"cours_enseignant: enseignant={enseignant.user.username}, cours_assignes count={cours_assignes.count()}")
+    
+    # Pour chaque cours, récupérer les évaluations associées
+    cours_avec_evaluations = []
+    for cours in cours_assignes:
+        evaluations = Evaluation.objects.filter(cours=cours).select_related('type_evaluation').order_by('-date')
+        cours_avec_evaluations.append({
+            'cours': cours,
+            'evaluations': evaluations,
+            'evaluations_count': evaluations.count(),
+            'evaluations_publiees': evaluations.filter(is_published=True).count(),
+        })
+    
+    print(f"cours_avec_evaluations count={len(cours_avec_evaluations)}")
+    
+    context = {
+        'cours_avec_evaluations': cours_avec_evaluations,
+        'enseignant': enseignant,
+    }
+    
+    return render(request, 'dashboard/cours_enseignant.html', context)
+
+@login_required
+def profil_enseignant(request):
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    
+    # Cours assignés
+    cours_assignes = Cours.objects.filter(
+        propositions_enseignants__enseignant=enseignant,
+        propositions_enseignants__est_accepte=True
+    ).distinct().select_related('filiere', 'semestre', 'annee_etude')
+    
+    # Évaluations
+    evaluations_a_venir = Evaluation.objects.filter(
+        cours__in=cours_assignes,
+        is_published=False
+    ).select_related('cours', 'type_evaluation').order_by('date')[:10]
+    
+    evaluations_publiees = Evaluation.objects.filter(
+        cours__in=cours_assignes,
+        is_published=True
+    ).select_related('cours', 'type_evaluation').order_by('-published_at')[:10]
+    
+    # Propositions
+    propositions_en_attente = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        est_accepte=False
+    ).select_related('cours', 'cours__filiere').order_by('-date_proposition')[:5]
+    
+    propositions_acceptees = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        est_accepte=True
+    ).select_related('cours', 'cours__filiere').order_by('-date_proposition')[:5]
+    
+    context = {
+        'enseignant': enseignant,
+        'cours_assignes': cours_assignes,
+        'cours_count': cours_assignes.count(),
+        'evaluations_a_venir': evaluations_a_venir,
+        'evaluations_publiees': evaluations_publiees,
+        'propositions_en_attente': propositions_en_attente,
+        'propositions_acceptees': propositions_acceptees,
+    }
+    
+    return render(request, 'dashboard/profil_enseignant.html', context)
+
+@login_required
+def saisie_notes_enseignant(request, evaluation_id):
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    evaluation = get_object_or_404(Evaluation, pk=evaluation_id)
+    
+    # Vérifier que l'enseignant est bien assigné à ce cours
+    cours_enseignant = Cours.objects.filter(
+        propositions_enseignants__enseignant=enseignant,
+        propositions_enseignants__est_accepte=True
+    ).filter(pk=evaluation.cours.pk).exists()
+    
+    if not cours_enseignant:
+        messages.error(request, "Vous n'êtes pas autorisé à saisir des notes pour cette évaluation.")
+        return redirect('dashboard_enseignant')
+    
+    # Récupérer tous les étudiants inscrits dans la filière du cours
+    students = Etudiant.objects.filter(
+        inscriptions__promotion__filiere=evaluation.cours.filiere
+    ).distinct().select_related('user').order_by('user__nom', 'user__postnom', 'user__prenom')
+    
+    if request.method == 'POST':
+        print(f"POST request received for evaluation {evaluation_id}")
+        print(f"POST data: {request.POST}")
+        notes_saved = 0
+        for student in students:
+            note = request.POST.get(f'note_{student.pk}')
+            print(f"Student {student.pk}: note={note}")
+            if note:
+                cotation, created = Cotation.objects.update_or_create(
+                    etudiant=student,
+                    evaluation=evaluation,
+                    defaults={'note': note}
+                )
+                notes_saved += 1
+                print(f"  {'Created' if created else 'Updated'} cotation: {cotation}")
+        print(f"Total notes saved: {notes_saved}")
+        messages.success(request, f"Les notes ont été enregistrées avec succès. ({notes_saved} notes)")
+        # Rediriger vers le dashboard enseignant au lieu de cours_enseignant
+        return redirect('dashboard_enseignant')
+    
+    # Récupérer les notes existantes
+    cotations = Cotation.objects.filter(evaluation=evaluation).select_related('etudiant')
+    notes_map = {cotation.etudiant_id: cotation.note for cotation in cotations}
+    
+    # Préparer les données pour le template
+    students_notes = []
+    for student in students:
+        students_notes.append({
+            'student': student,
+            'note': notes_map.get(student.id),
+        })
+    
+    context = {
+        'evaluation': evaluation,
+        'students_notes': students_notes,
+        'enseignant': enseignant,
+    }
+    
+    return render(request, 'dashboard/saisie_notes_enseignant.html', context)
+
+@login_required
 def proposer_cours(request):
     if not request.user.has_role('chef de filière'):
         messages.error(request, "Accès réservé au chef de filière.")
@@ -552,14 +763,14 @@ class CoursListView(BaseCRUDListView):
 
 class CoursCreateView(BaseCRUDCreateView):
     model = Cours
-    fields = ['filiere', 'semestre', 'code', 'libelle', 'volume_horaire']
+    fields = ['filiere', 'semestre', 'annee_etude', 'code', 'libelle', 'volume_horaire']
     success_url = reverse_lazy('cours_list')
     model_name = 'Cours'
     action = 'Ajouter'
 
 class CoursUpdateView(BaseCRUDUpdateView):
     model = Cours
-    fields = ['filiere', 'semestre', 'code', 'libelle', 'volume_horaire']
+    fields = ['filiere', 'semestre', 'annee_etude', 'code', 'libelle', 'volume_horaire']
     success_url = reverse_lazy('cours_list')
     model_name = 'Cours'
     action = 'Modifier'
@@ -695,7 +906,7 @@ class UserCreateView(AdminRequiredMixin, CreateView):
 
     def form_valid(self, form):
         user = form.save(commit=False)
-        user.set_password('changeme123')
+        user.set_password('demo')
         user.save()
         return super().form_valid(form)
 

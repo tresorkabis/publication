@@ -1,0 +1,591 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #c7d2fe;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+    }
+
+    .dashboard-enseignant {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .dashboard-title i {
+        color: var(--primary);
+    }
+
+    .enseignant-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .enseignant-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    .enseignant-details h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .enseignant-details p {
+        margin: 0.25rem 0 0;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--primary), var(--primary-light));
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    .stat-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .stat-info h3 {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-info .value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--dark);
+        line-height: 1;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-icon.courses { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+    .stat-icon.evaluations { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .stat-icon.published { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .stat-icon.pending { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-title i {
+        color: var(--primary);
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        color: white;
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        color: white;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .modern-table th {
+        background: var(--light);
+        color: #6b7280;
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modern-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--dark);
+        font-size: 0.875rem;
+    }
+
+    .modern-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modern-table tr:hover {
+        background: rgba(79, 70, 229, 0.03);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 9999px;
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .badge-secondary {
+        background: rgba(156, 163, 175, 0.1);
+        color: #6b7280;
+    }
+
+    .badge-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .cours-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .cours-card {
+        background: var(--light);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+    }
+
+    .cours-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .cours-card h5 {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .cours-card p {
+        margin: 0.25rem 0;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .cours-card .badge {
+        margin-top: 0.5rem;
+    }
+
+    .stat-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .stat-card-link:hover .stat-card {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-title {
+            font-size: 1.5rem;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-enseignant">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            <i class="fas fa-chalkboard-teacher"></i>
+            Mon Espace Enseignant
+        </h1>
+        <a href="{% url 'profil_enseignant' %}" class="enseignant-info" style="text-decoration: none; color: inherit; cursor: pointer;">
+            <div class="enseignant-avatar">
+                {{ enseignant.user.prenom|first|upper }}{{ enseignant.user.nom|first|upper }}
+            </div>
+            <div class="enseignant-details">
+                <h4>{{ enseignant.user.get_full_name }}</h4>
+                <p>{{ enseignant.fonction.intitule }} | {{ enseignant.grade }}</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="stats-container">
+        <a href="{% url 'cours_list' %}" class="stat-card-link">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Mes Cours</h3>
+                        <div class="value">{{ cours_count }}</div>
+                    </div>
+                    <div class="stat-icon courses">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'evaluation_list' %}" class="stat-card-link">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Évaluations à venir</h3>
+                        <div class="value">{{ evaluations_a_venir|length }}</div>
+                    </div>
+                    <div class="stat-icon evaluations">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'evaluation_list' %}?published=true" class="stat-card-link">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Évaluations publiées</h3>
+                        <div class="value">{{ evaluations_publiees|length }}</div>
+                    </div>
+                    <div class="stat-icon published">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'proposer_cours' %}" class="stat-card-link">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Propositions en attente</h3>
+                        <div class="value">{{ propositions_en_attente|length }}</div>
+                    </div>
+                    <div class="stat-icon pending">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Mes Cours -->
+    <div class="content-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-book-open"></i>
+                Mes Cours Assignés
+            </div>
+            <a href="{% url 'cours_enseignant' %}" class="btn-action btn-primary">
+                <i class="fas fa-eye"></i>
+                Voir tout
+            </a>
+        </div>
+        {% if cours_assignes %}
+        <div class="cours-list">
+            {% for cours in cours_assignes %}
+            <div class="cours-card">
+                <h5>{{ cours.libelle }}</h5>
+                <p><i class="fas fa-code me-1"></i>{{ cours.code }}</p>
+                <p><i class="fas fa-building-columns me-1"></i>{{ cours.filiere.libelle }}</p>
+                <p><i class="fas fa-calendar me-1"></i>{{ cours.semestre.libelle }}</p>
+                {% if cours.annee_etude %}
+                <p><i class="fas fa-layer-group me-1"></i>{{ cours.annee_etude.libelle }}</p>
+                {% endif %}
+                <p><i class="fas fa-clock me-1"></i>{{ cours.volume_horaire }}h</p>
+                <span class="badge badge-success">Actif</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-info-circle me-2"></i>
+            {% if propositions_en_attente %}
+                <strong>Vous avez {{ propositions_en_attente|length }} proposition(s) en attente d'approbation.</strong><br>
+                Les cours apparaîtront ici une fois que le chef de filière aura accepté vos propositions.
+            {% else %}
+                Aucun cours assigné pour le moment. Contactez le chef de filière pour être assigné à des cours.
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="content-grid">
+        <!-- Évaluations à venir -->
+        <div class="content-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-clock"></i>
+                    Évaluations à venir
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evaluation in evaluations_a_venir %}
+                        <tr>
+                            <td>{{ evaluation.cours.libelle }}</td>
+                            <td>{{ evaluation.type_evaluation.libelle }}</td>
+                            <td>{{ evaluation.date|date:'d/m/Y' }}</td>
+                            <td>
+                                <a href="{% url 'saisie_notes_enseignant' evaluation_id=evaluation.pk %}" class="badge badge-warning" style="text-decoration: none; cursor: pointer;">
+                                    <i class="fas fa-edit me-1"></i>Saisir notes
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">Aucune évaluation à venir</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Évaluations publiées récemment -->
+        <div class="content-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-check-circle"></i>
+                    Évaluations publiées
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Type</th>
+                            <th>Publication</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evaluation in evaluations_publiees %}
+                        <tr>
+                            <td>{{ evaluation.cours.libelle }}</td>
+                            <td>{{ evaluation.type_evaluation.libelle }}</td>
+                            <td>{{ evaluation.published_at|date:'d/m/Y' }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="empty-state">Aucune évaluation publiée</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propositions de cours -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-hand-paper"></i>
+                Mes Propositions de Cours
+            </div>
+        </div>
+        {% if propositions_en_attente or propositions_acceptees %}
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Cours</th>
+                        <th>Filière</th>
+                        <th>Date proposition</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proposition in propositions_en_attente %}
+                    <tr>
+                        <td>{{ proposition.cours.libelle }}</td>
+                        <td>{{ proposition.cours.filiere.libelle }}</td>
+                        <td>{{ proposition.date_proposition|date:'d/m/Y' }}</td>
+                        <td>
+                            <span class="badge badge-warning">En attente</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% for proposition in propositions_acceptees %}
+                    <tr>
+                        <td>{{ proposition.cours.libelle }}</td>
+                        <td>{{ proposition.cours.filiere.libelle }}</td>
+                        <td>{{ proposition.date_proposition|date:'d/m/Y' }}</td>
+                        <td>
+                            <span class="badge badge-success">Acceptée</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-info-circle me-2"></i>
+            Vous n'avez pas encore fait de propositions de cours.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

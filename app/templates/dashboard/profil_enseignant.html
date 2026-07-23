@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #c7d2fe;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+    }
+
+    .profil-enseignant {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .page-title i {
+        color: var(--primary);
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .profile-info h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0 0 0.5rem;
+    }
+
+    .profile-info p {
+        margin: 0.25rem 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .profile-info i {
+        color: var(--primary);
+        width: 20px;
+        margin-right: 0.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--light);
+        border-radius: 8px;
+    }
+
+    .info-item i {
+        font-size: 1.25rem;
+        color: var(--primary);
+        width: 24px;
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin: 0.25rem 0 0;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin: 2rem 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: var(--primary);
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-box {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .stat-box-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    .stat-box-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: white;
+        color: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: var(--light);
+        border-color: var(--primary);
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="profil-enseignant">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-user-tie"></i>
+            Mon Profil
+        </h1>
+        <a href="{% url 'dashboard_enseignant' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Retour au tableau de bord
+        </a>
+    </div>
+
+    <!-- Informations personnelles -->
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {{ enseignant.user.prenom|first|upper }}{{ enseignant.user.nom|first|upper }}
+            </div>
+            <div class="profile-info">
+                <h2>{{ enseignant.user.get_full_name }}</h2>
+                <p><i class="fas fa-briefcase"></i>{{ enseignant.fonction.intitule }}</p>
+                <p><i class="fas fa-award"></i>{{ enseignant.grade }}</p>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                <div class="info-content">
+                    <p class="info-label">Nom d'utilisateur</p>
+                    <p class="info-value">{{ enseignant.user.username }}</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-envelope"></i>
+                <div class="info-content">
+                    <p class="info-label">Email</p>
+                    <p class="info-value">{{ enseignant.user.email }}</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-phone"></i>
+                <div class="info-content">
+                    <p class="info-label">Téléphone</p>
+                    <p class="info-value">{{ enseignant.user.tel|default:"Non renseigné" }}</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <div class="info-content">
+                    <p class="info-label">Adresse</p>
+                    <p class="info-value">{{ enseignant.user.adresse|default:"Non renseignée" }}</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-venus-mars"></i>
+                <div class="info-content">
+                    <p class="info-label">Sexe</p>
+                    <p class="info-value">{{ enseignant.user.get_sexe_display|default:"Non renseigné" }}</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-id-card"></i>
+                <div class="info-content">
+                    <p class="info-label">Matricule</p>
+                    <p class="info-value">{{ enseignant.user.mat|default:"Non renseigné" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <h3 class="section-title">
+        <i class="fas fa-chart-bar"></i>
+        Mes Statistiques
+    </h3>
+
+    <div class="stats-row">
+        <div class="stat-box">
+            <div class="stat-box-value">{{ cours_count }}</div>
+            <div class="stat-box-label">Cours assignés</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-value">{{ evaluations_a_venir|length }}</div>
+            <div class="stat-box-label">Évaluations à venir</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-value">{{ evaluations_publiees|length }}</div>
+            <div class="stat-box-label">Évaluations publiées</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-value">{{ propositions_en_attente|length }}</div>
+            <div class="stat-box-label">Propositions en attente</div>
+        </div>
+    </div>
+
+    <!-- Cours assignés -->
+    <h3 class="section-title">
+        <i class="fas fa-book-open"></i>
+        Mes Cours Assignés
+    </h3>
+
+    {% if cours_assignes %}
+    <div class="profile-card">
+        <div class="info-grid">
+            {% for cours in cours_assignes %}
+            <div class="info-item">
+                <i class="fas fa-book"></i>
+                <div class="info-content">
+                    <p class="info-value">{{ cours.libelle }}</p>
+                    <p class="info-label">{{ cours.code }} - {{ cours.filiere.libelle }} - {{ cours.semestre.libelle }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="profile-card">
+        <p style="text-align: center; color: #6b7280;">
+            Aucun cours assigné pour le moment.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Propositions de cours -->
+    <h3 class="section-title">
+        <i class="fas fa-hand-paper"></i>
+        Mes Propositions de Cours
+    </h3>
+
+    {% if propositions_en_attente or propositions_acceptees %}
+    <div class="profile-card">
+        {% if propositions_en_attente %}
+        <div style="margin-bottom: 1rem;">
+            <h4 style="font-size: 1rem; color: var(--warning); margin-bottom: 0.5rem;">
+                <i class="fas fa-clock me-2"></i>En attente ({{ propositions_en_attente|length }})
+            </h4>
+            {% for proposition in propositions_en_attente %}
+            <div class="info-item" style="margin-bottom: 0.5rem;">
+                <i class="fas fa-book"></i>
+                <div class="info-content">
+                    <p class="info-value">{{ proposition.cours.libelle }}</p>
+                    <p class="info-label">{{ proposition.cours.filiere.libelle }} - Proposé le {{ proposition.date_proposition|date:'d/m/Y' }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if propositions_acceptees %}
+        <div>
+            <h4 style="font-size: 1rem; color: var(--success); margin-bottom: 0.5rem;">
+                <i class="fas fa-check-circle me-2"></i>Acceptées ({{ propositions_acceptees|length }})
+            </h4>
+            {% for proposition in propositions_acceptees %}
+            <div class="info-item" style="margin-bottom: 0.5rem;">
+                <i class="fas fa-book"></i>
+                <div class="info-content">
+                    <p class="info-value">{{ proposition.cours.libelle }}</p>
+                    <p class="info-label">{{ proposition.cours.filiere.libelle }} - Accepté le {{ proposition.date_proposition|date:'d/m/Y' }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="profile-card">
+        <p style="text-align: center; color: #6b7280;">
+            Vous n'avez pas encore fait de propositions de cours.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

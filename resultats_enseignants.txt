@@ -1,0 +1,129 @@
+================================================================================
+LISTE DES ENSEIGNANTS ET LEURS COURS ASSIGNÉS
+================================================================================
+
+📚 Enseignant: Chef_INF Mukendi Informatique
+   Username: chef_inf
+   Email: chef.inf@esforca.cd
+   Fonction: Chargé de Cours
+   Grade: Professeur en Informatique de Gestion
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_INF_1 Mabiala Marc
+   Username: ens_inf1
+   Email: enseignant.inf1@esforca.cd
+   Fonction: Professeur Ordinaire
+   Grade: Assistant en Informatique de Gestion
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_INF_2 Kabila Anne
+   Username: ens_inf2
+   Email: enseignant.inf2@esforca.cd
+   Fonction: Professeur Ordinaire
+   Grade: Assistant en Informatique de Gestion
+   Cours assignés: Aucun
+
+📚 Enseignant: Chef_MATH Kavumba Mathématiques
+   Username: chef_math
+   Email: chef.math@esforca.cd
+   Fonction: Professeur Ordinaire
+   Grade: Professeur en Mathématiques et Applications
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_MATH_1 Kabila Jean
+   Username: ens_math1
+   Email: enseignant.math1@esforca.cd
+   Fonction: Chargé de Cours
+   Grade: Assistant en Mathématiques et Applications
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_MATH_2 Mukendi Anne
+   Username: ens_math2
+   Email: enseignant.math2@esforca.cd
+   Fonction: Chef de Travaux
+   Grade: Assistant en Mathématiques et Applications
+   Cours assignés (2):
+      - Marketing (GESTL102) - Gestion des Entreprises - Semestre 2
+      - Astrophysique (PHYL204) - Physique Fondamentale - Semestre 4
+
+📚 Enseignant: Chef_PHY Nkongolo Physique
+   Username: chef_phy
+   Email: chef.phy@esforca.cd
+   Fonction: Professeur Ordinaire
+   Grade: Professeur en Physique Fondamentale
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_PHY_1 Kabila Sophie
+   Username: ens_phy1
+   Email: enseignant.phy1@esforca.cd
+   Fonction: Chargé de Cours
+   Grade: Assistant en Physique Fondamentale
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_PHY_2 Kabila Jean
+   Username: ens_phy2
+   Email: enseignant.phy2@esforca.cd
+   Fonction: Professeur Ordinaire
+   Grade: Assistant en Physique Fondamentale
+   Cours assignés: Aucun
+
+📚 Enseignant: Chef_GEST Mabiala Gestion
+   Username: chef_gest
+   Email: chef.gest@esforca.cd
+   Fonction: Professeur Associé
+   Grade: Professeur en Gestion des Entreprises
+   Cours assignés: Aucun
+
+📚 Enseignant: Enseignant_GEST_1 Kabila Jean
+   Username: ens_gest1
+   Email: enseignant.gest1@esforca.cd
+   Fonction: Chargé de Cours
+   Grade: Assistant en Gestion des Entreprises
+   Cours assignés (1):
+      - Probabilités (MATHL203) - Mathématiques et Applications - Semestre 3
+
+📚 Enseignant: Enseignant_GEST_2 Mutombo Paul
+   Username: ens_gest2
+   Email: enseignant.gest2@esforca.cd
+   Fonction: Chef de Travaux
+   Grade: Assistant en Gestion des Entreprises
+   Cours assignés (2):
+      - Physique des particules (PHYL301) - Physique Fondamentale - Semestre 1
+      - Management (GESTL104) - Gestion des Entreprises - Semestre 4
+
+================================================================================
+RÉSUMÉ
+================================================================================
+Total enseignants: 12
+Enseignants avec cours: 3
+Enseignants sans cours: 9
+
+================================================================================
+ENSEIGNANTS AVEC COURS ASSIGNÉS:
+================================================================================
+✓ Enseignant_MATH_2 Mukendi Anne (ens_math2)
+✓ Enseignant_GEST_1 Kabila Jean (ens_gest1)
+✓ Enseignant_GEST_2 Mutombo Paul (ens_gest2)
+
+================================================================================
+ENSEIGNANTS SANS COURS:
+================================================================================
+✗ Chef_INF Mukendi Informatique (chef_inf)
+✗ Enseignant_INF_1 Mabiala Marc (ens_inf1)
+✗ Enseignant_INF_2 Kabila Anne (ens_inf2)
+✗ Chef_MATH Kavumba Mathématiques (chef_math)
+✗ Enseignant_MATH_1 Kabila Jean (ens_math1)
+✗ Chef_PHY Nkongolo Physique (chef_phy)
+✗ Enseignant_PHY_1 Kabila Sophie (ens_phy1)
+✗ Enseignant_PHY_2 Kabila Jean (ens_phy2)
+✗ Chef_GEST Mabiala Gestion (chef_gest)
+
+================================================================================
+COMPTE D'UN ENSEIGNANT AVEC DES COURS:
+================================================================================
+Username: ens_math2
+Nom complet: Enseignant_MATH_2 Mukendi Anne
+Email: enseignant.math2@esforca.cd
+Mot de passe par défaut: changeme123
+
+Pour se connecter: http://localhost:8000/connexion/

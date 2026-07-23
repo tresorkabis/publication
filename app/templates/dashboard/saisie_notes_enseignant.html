@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #c7d2fe;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+    }
+
+    .saisie-notes {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .page-title i {
+        color: var(--primary);
+    }
+
+    .evaluation-info {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .evaluation-info h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+
+    .evaluation-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .evaluation-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .evaluation-detail-item i {
+        color: var(--primary);
+        width: 20px;
+    }
+
+    .notes-form {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+    }
+
+    .notes-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .notes-table th {
+        background: var(--light);
+        color: #6b7280;
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        font-size: 0.875rem;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .notes-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+
+    .notes-table tr:hover {
+        background: rgba(79, 70, 229, 0.03);
+    }
+
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .student-details {
+        flex: 1;
+    }
+
+    .student-name {
+        font-weight: 500;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .student-matricule {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .note-input {
+        width: 100px;
+        padding: 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .note-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .note-input.has-value {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: var(--success);
+        color: var(--success);
+        font-weight: 600;
+    }
+
+    .btn-submit {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 1.5rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: white;
+        color: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: var(--light);
+        border-color: var(--primary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6b7280;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #d1d5db;
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .notes-table {
+            font-size: 0.875rem;
+        }
+
+        .note-input {
+            width: 80px;
+        }
+    }
+</style>
+
+<div class="saisie-notes">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-edit"></i>
+            Saisie des Notes
+        </h1>
+        <a href="{% url 'cours_enseignant' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Retour
+        </a>
+    </div>
+
+    <div class="evaluation-info">
+        <h3>{{ evaluation.cours.libelle }}</h3>
+        <div class="evaluation-details">
+            <div class="evaluation-detail-item">
+                <i class="fas fa-code"></i>
+                <span>{{ evaluation.cours.code }}</span>
+            </div>
+            <div class="evaluation-detail-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>{{ evaluation.type_evaluation.libelle }}</span>
+            </div>
+            <div class="evaluation-detail-item">
+                <i class="fas fa-calendar"></i>
+                <span>{{ evaluation.date|date:'d/m/Y' }}</span>
+            </div>
+            <div class="evaluation-detail-item">
+                <i class="fas fa-building-columns"></i>
+                <span>{{ evaluation.cours.filiere.libelle }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="notes-form">
+        <form method="post" action="{% url 'saisie_notes_enseignant' evaluation_id=evaluation.pk %}">
+            {% csrf_token %}
+            
+            <div class="table-responsive">
+                <table class="notes-table">
+                    <thead>
+                        <tr>
+                            <th>Étudiant</th>
+                            <th>Matricule</th>
+                            <th>Note /20</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in students_notes %}
+                        <tr>
+                            <td>
+                                <div class="student-info">
+                                    <div class="student-avatar">
+                                        {{ item.student.user.prenom|first|upper }}{{ item.student.user.nom|first|upper }}
+                                    </div>
+                                    <div class="student-details">
+                                        <p class="student-name">{{ item.student.user.get_full_name }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ item.student.matricule|default:"N/A" }}</td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    name="note_{{ item.student.pk }}" 
+                                    class="note-input {% if item.note %}has-value{% endif %}"
+                                    value="{{ item.note|default:'' }}"
+                                    min="0" 
+                                    max="20" 
+                                    step="0.25"
+                                    placeholder="--"
+                                >
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>Aucun étudiant inscrit dans cette filière.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if students_notes %}
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i>
+                Enregistrer les notes
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
