@@ -34,6 +34,7 @@ urlpatterns = [
     path('promotions/<int:pk>/supprimer/', views.PromotionDeleteView.as_view(), name='promotion_delete'),
 
     path('cours/', views.CoursListView.as_view(), name='cours_list'),
+    path('cours/<int:pk>/', views.CoursDetailView.as_view(), name='cours_detail'),
     path('cours/ajouter/', views.CoursCreateView.as_view(), name='cours_create'),
     path('cours/<int:pk>/modifier/', views.CoursUpdateView.as_view(), name='cours_update'),
     path('cours/<int:pk>/supprimer/', views.CoursDeleteView.as_view(), name='cours_delete'),

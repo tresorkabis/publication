@@ -564,6 +564,21 @@ class CoursUpdateView(BaseCRUDUpdateView):
     model_name = 'Cours'
     action = 'Modifier'
 
+class CoursDetailView(StaffRequiredMixin, DetailView):
+    model = Cours
+    template_name = 'crud/cours_detail.html'
+    context_object_name = 'cours'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cours = self.object
+        context.update({
+            'model_name': 'Cours',
+            'singular_name': 'Cours',
+            'evaluations': cours.evaluation_set.select_related('type_evaluation').all(),
+        })
+        return context
+
 class CoursDeleteView(BaseCRUDDeleteView):
     model = Cours
     success_url = reverse_lazy('cours_list')

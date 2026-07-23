@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-white rounded-3 shadow-sm border p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 fw-bold text-dark">{{ model_name }} : {{ cours.libelle }}</h1>
+            <p class="text-muted small">Détails du cours</p>
+        </div>
+        <a href="{% url 'cours_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-book me-2"></i>Informations du cours</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold" style="width: 40%;">Code</td>
+                            <td>{{ cours.code }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Libellé</td>
+                            <td>{{ cours.libelle }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Filière</td>
+                            <td>{{ cours.filiere.libelle }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Semestre</td>
+                            <td>{{ cours.semestre.libelle }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Année d'étude</td>
+                            <td>{{ cours.annee_etude.libelle }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Volume horaire</td>
+                            <td>{{ cours.volume_horaire }} heures</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Crédits</td>
+                            <td>{{ cours.credit }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Évaluations -->
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Évaluations ({{ evaluations|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if evaluations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type d'évaluation</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evaluation in evaluations %}
+                        <tr>
+                            <td>{{ evaluation.date|date:"d/m/Y" }}</td>
+                            <td>{{ evaluation.type_evaluation.libelle }}</td>
+                            <td>
+                                {% if evaluation.is_published %}
+                                    <span class="badge bg-success">Publié</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Brouillon</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">Aucune évaluation enregistrée pour ce cours.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
