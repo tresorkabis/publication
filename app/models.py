@@ -39,12 +39,12 @@ class User(AbstractUser):
 
     def get_full_name(self):
         parts = []
-        if self.prenom:
-            parts.append(self.prenom)
         if self.nom:
             parts.append(self.nom)
-        if self.postnom and 'informatique de gestion' not in self.postnom.lower():
+        if self.postnom:
             parts.append(self.postnom)
+        if self.prenom:
+            parts.append(self.prenom)
         return ' '.join(parts) if parts else super().get_full_name()
 
     @property
@@ -121,6 +121,12 @@ class Etudiant(models.Model):
 
     def __str__(self):
         return f"Etudiant: {self.user.last_name} ({self.matricule or 'N/A'})"
+
+    @property
+    def user_display(self):
+        """Nom complet formaté pour l'affichage dans les listes"""
+        full = self.user.get_full_name()
+        return full if full else self.user.username
 
 
 class Filiere(models.Model):

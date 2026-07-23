@@ -4,14 +4,21 @@ from .models import User, Role, UtilisateurRole, Fonction, Personnel, Etudiant, 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    fieldsets = BaseUserAdmin.fieldsets + (
-        (None, {'fields': ('nom', 'postnom', 'prenom', 'sexe', 'telephone', 'matricule', 'adresse', 'photo', 'is_validated')}),
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Informations personnelles', {'fields': ('nom', 'postnom', 'prenom', 'sexe', 'tel', 'mat', 'email', 'adresse', 'photo')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Validation', {'fields': ('is_validated',)}),
+        ('Dates importantes', {'fields': ('last_login', 'date_joined')}),
     )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        (None, {'fields': ('username', 'email', 'nom', 'postnom', 'prenom', 'sexe', 'telephone', 'matricule', 'adresse', 'photo', 'is_validated', 'password1', 'password2')}),
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'password1', 'password2'),
+        }),
     )
-    list_display = ('username', 'nom', 'prenom', 'matricule', 'email', 'is_staff', 'is_validated', 'get_roles')
-    search_fields = ('username', 'nom', 'prenom', 'matricule', 'email')
+    list_display = ('username', 'nom', 'postnom', 'prenom', 'mat', 'email', 'is_staff', 'is_validated', 'get_roles')
+    search_fields = ('username', 'nom', 'postnom', 'prenom', 'mat', 'email')
 
     def get_roles(self, obj):
         return ", ".join(obj.role_labels)

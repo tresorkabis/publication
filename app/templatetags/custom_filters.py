@@ -21,3 +21,13 @@ def subtract(value, arg):
         return int(value) - int(arg)
     except (ValueError, TypeError):
         return 0
+
+@register.filter
+def last_item(lst):
+    """Récupère le dernier élément d'une liste de manière sécurisée"""
+    try:
+        if not lst:
+            return None
+        return list(lst)[-1]
+    except (IndexError, TypeError, ValueError):
+        return None

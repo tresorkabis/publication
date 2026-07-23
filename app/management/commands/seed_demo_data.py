@@ -144,6 +144,8 @@ class Command(BaseCommand):
         
         # Créer une filière avec chef
         created_filieres = []
+        postnoms = ['Mukendi', 'Kabasele', 'Kabila', 'Lumumba', 'Mabiala', 'Tshisekedi', 'Kavumba', 'Mutombo', 'Nkongolo', 'Mbuyi']
+        
         for i, f_data in enumerate(filieres_data):
             # Créer un chef pour cette filière
             chef_email = f'chef.{f_data["code"].lower()}@esforca.cd'
@@ -152,7 +154,7 @@ class Command(BaseCommand):
                 defaults={
                     'username': f'chef_{f_data["code"].lower()}',
                     'nom': f'Chef_{f_data["code"]}',
-                    'postnom': f'De la filière',
+                    'postnom': random.choice(postnoms),
                     'prenom': f'{f_data["libelle"].split()[0]}',
                     'sexe': random.choice(['M', 'F']),
                     'tel': f'+24380000001{i}',
@@ -191,7 +193,7 @@ class Command(BaseCommand):
                     defaults={
                         'username': f'ens_{f_data["code"].lower()}{j+1}',
                         'nom': f'Enseignant_{f_data["code"]}_{j+1}',
-                        'postnom': f'De la filière',
+                        'postnom': random.choice(postnoms),
                         'prenom': f'{random.choice(["Jean", "Marie", "Paul", "Sophie", "Marc", "Anne"])}',
                         'sexe': random.choice(['M', 'F']),
                         'tel': f'+2438100000{i}{j}',
@@ -230,7 +232,7 @@ class Command(BaseCommand):
                     defaults={
                         'username': f'etud_{f_data["code"].lower()}_{k+1}',
                         'nom': nom,
-                        'postnom': f'de {f_data["libelle"]}',
+                        'postnom': random.choice(postnoms),
                         'prenom': prenom,
                         'sexe': sexe,
                         'tel': f'+2438200000{i}{k:02d}',

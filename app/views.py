@@ -782,25 +782,20 @@ class EtudiantListView(ChefFiliereOrAdminMixin, BaseCRUDListView):
     delete_url_name = 'etudiant_delete'
 
     def get_fields(self):
-        return [
-            ('user', 'Utilisateur'),
-            ('matricule', 'Matricule'),
-            ('date_inscription', "Date d'inscription"),
-        ]
-
-    def get_user(self, obj):
-        return obj.user.get_full_name() or obj.user.username
-    get_user.short_description = 'Utilisateur'
+        return []
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('user')
         if self.request.user.has_role('chef de filière') and not self.request.user.is_superuser:
-            # Filtrer pour n'afficher que les étudiants de la/les filière(s) du chef
             chef_personnel = getattr(self.request.user, 'personnel', None)
             if chef_personnel:
                 chef_filieres = Filiere.objects.filter(chef=chef_personnel)
                 queryset = queryset.filter(inscriptions__promotion__filiere__in=chef_filieres).distinct()
         return queryset
+
+    def get_user(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    get_user.short_description = 'Utilisateur'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
