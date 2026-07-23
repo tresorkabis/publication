@@ -151,7 +151,6 @@ def dashboard(request):
         'recent_inscriptions': recent_inscriptions,
         'recent_evaluations': recent_evaluations,
         'is_student': False,
-        'periodes_examens': toutes_periodes_examens,
     }
 
     return render(request, 'dashboard.html', context)

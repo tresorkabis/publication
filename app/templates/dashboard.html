@@ -640,48 +640,6 @@
         </div>
     </div>
     {% else %}
-    <!-- PÉRIODES D'EXAMENS - TOUTES FILIÈRES -->
-    <div class="chart-section {% if periodes_examens %}with-border{% endif %}" style="margin-bottom: 2rem;">
-        <div class="chart-header">
-            <div class="chart-title">
-                <i class="fas fa-calendar-alt text-emerald-600"></i>
-                Périodes d'examens — Toutes les filières
-            </div>
-        </div>
-        {% if periodes_examens %}
-        <div class="periodes-grid">
-            {% for periode in periodes_examens %}
-            <div class="periode-card {% if periode.est_en_cours %}en-cours{% elif periode.date_debut > today %}a-venir{% else %}passee{% endif %}">
-                <div class="periode-header">
-                    <span class="periode-indicator {% if periode.est_en_cours %}en-cours{% elif periode.date_debut > today %}a-venir{% else %}passee{% endif %}"></span>
-                    <span class="periode-type">{{ periode.get_type_periode_display }}</span>
-                    <span class="badge-2024" style="background: var(--primary); color: white;">{{ periode.filiere.code }}</span>
-                    <span class="badge-2024 badge-secondary-2024">{{ periode.promotion.libelle }}</span>
-                </div>
-                <div class="periode-dates">
-                    <i class="far fa-calendar-alt"></i>
-                    <span><strong>Du</strong> {{ periode.date_debut|date:"d/m/Y" }}</span>
-                    <span>→</span>
-                    <span><strong>au</strong> {{ periode.date_fin|date:"d/m/Y" }}</span>
-                    {% if periode.est_en_cours %}
-                    <span class="badge-2024" style="background: #d1fae5; color: #065f46;">En cours</span>
-                    {% endif %}
-                </div>
-                {% if periode.annee_etude %}
-                <div class="periode-details">
-                    <i class="fas fa-graduation-cap"></i> {{ periode.annee_etude.libelle }} — {{ periode.semestre.libelle }}
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
-            Aucune période d'examen définie.
-        </p>
-        {% endif %}
-    </div>
-
     <div class="stats-container">
         <div class="stat-card-2024">
             <div class="stat-content">
