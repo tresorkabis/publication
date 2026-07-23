@@ -62,6 +62,7 @@ urlpatterns = [
 
     # Gestion des étudiants (admin)
     path('admin/etudiants/', views.EtudiantListView.as_view(), name='etudiant_list'),
+    path('admin/etudiants/<int:pk>/', views.EtudiantDetailView.as_view(), name='etudiant_detail'),
     path('admin/etudiants/ajouter/', views.EtudiantCreateView.as_view(), name='etudiant_create'),
     path('admin/etudiants/<int:pk>/modifier/', views.EtudiantUpdateView.as_view(), name='etudiant_update'),
     path('admin/etudiants/<int:pk>/supprimer/', views.EtudiantDeleteView.as_view(), name='etudiant_delete'),

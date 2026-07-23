@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-    {% load custom_filters %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="bg-white rounded-3 shadow-sm border p-4">
@@ -15,10 +15,11 @@
         {% endif %}
     </div>
 
-    {% if promotions %}
+    {% if promotions or semestres %}
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3 align-items-center">
+                {% if promotions %}
                 <div class="col-auto">
                     <label for="promotionFilter" class="col-form-label">Filtrer par promotion :</label>
                 </div>
@@ -32,9 +33,25 @@
                         {% endfor %}
                     </select>
                 </div>
-                {% if selected_promotion %}
+                {% endif %}
+                {% if semestres %}
                 <div class="col-auto">
-                    <a href="{% url 'etudiant_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <label for="semestreFilter" class="col-form-label">Filtrer par semestre :</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select" id="semestreFilter" name="semestre" onchange="this.form.submit()">
+                        <option value="">Tous les semestres</option>
+                        {% for semestre in semestres %}
+                        <option value="{{ semestre.id }}" {% if selected_semestre == semestre.id|stringformat:"s" %}selected{% endif %}>
+                            {{ semestre.libelle }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                {% if selected_promotion or selected_semestre %}
+                <div class="col-auto">
+                    <a href="{% url 'cours_list' %}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-times me-1"></i>Réinitialiser
                     </a>
                 </div>
@@ -44,48 +61,22 @@
     </div>
     {% endif %}
 
-        <div class="table-responsive">
+    <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
-                    <th scope="col">Matricule</th>
-                    <th scope="col">Nom complet</th>
-                    <th scope="col">Sexe</th>
-                    <th scope="col">Promotions</th>
-                    <th scope="col">Email</th>
+                    {% for field_name, field_label in fields %}
+                        <th scope="col">{{ field_label }}</th>
+                    {% endfor %}
                     <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for obj in object_list %}
                     <tr>
-                        <td>{{ obj.matricule|default:"-" }}</td>
-                        <td>
-                            <strong>{{ obj.user.get_full_name }}</strong>
-                            <br>
-                            <small class="text-muted">{{ obj.user.username }}</small>
-                        </td>
-                        <td>{{ obj.user.sexe|default:"-" }}</td>
-                        <td>
-                            {% with inscriptions=obj.inscriptions.all %}
-                            {% if inscriptions %}
-                                {% with last_inscription=inscriptions|last_item %}
-                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill">
-                                    {{ last_inscription.promotion.libelle }} ({{ last_inscription.annee }})
-                                </span>
-                                {% if inscriptions|length > 1 %}
-                                    <br>
-                                    <small class="text-muted">+{{ inscriptions|length|subtract:1 }} autre(s) inscription(s)</small>
-                                {% endif %}
-                                {% endwith %}
-                            {% else %}
-                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill">
-                                    Aucune inscription
-                                </span>
-                            {% endif %}
-                            {% endwith %}
-                        </td>
-                        <td>{{ obj.user.email|default:"-" }}</td>
+                        {% for field_name, field_label in fields %}
+                            <td>{{ obj|get_attr:field_name }}</td>
+                        {% endfor %}
                         <td>
                             <div class="d-flex gap-2">
                                 {% if update_url_name %}
@@ -103,7 +94,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">Aucun élément trouvé.</td>
+                        <td colspan="{{ fields|length|add:'1' }}" class="text-center text-muted py-4">Aucun élément trouvé.</td>
                     </tr>
                 {% endfor %}
             </tbody>

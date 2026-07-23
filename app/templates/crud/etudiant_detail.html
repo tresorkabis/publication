@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+    {% load custom_filters %}
+
+{% block content %}
+<div class="bg-white rounded-3 shadow-sm border p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 fw-bold text-dark">{{ model_name }} : {{ etudiant.user.get_full_name }}</h1>
+            <p class="text-muted small">Détails de l'étudiant</p>
+        </div>
+        <a href="{% url 'etudiant_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Informations personnelles -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Informations personnelles</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold" style="width: 40%;">Nom complet</td>
+                            <td>{{ etudiant.user.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Nom d'utilisateur</td>
+                            <td>{{ etudiant.user.username }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Email</td>
+                            <td>{{ etudiant.user.email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Sexe</td>
+                            <td>{{ etudiant.user.get_sexe_display }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Téléphone</td>
+                            <td>{{ etudiant.user.tel|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Matricule</td>
+                            <td>{{ etudiant.matricule|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Adresse</td>
+                            <td>{{ etudiant.user.adresse|default:"-" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations scolaires -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Informations scolaires</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold" style="width: 40%;">Matricule étudiant</td>
+                            <td><span class="badge bg-primary">{{ etudiant.matricule|default:"N/A" }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Date d'inscription</td>
+                            <td>{{ etudiant.date_inscription|date:"d/m/Y"|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Statut</td>
+                            <td>
+                                {% if etudiant.user.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactif</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Validé</td>
+                            <td>
+                                {% if etudiant.user.is_validated %}
+                                    <span class="badge bg-success">Oui</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Non</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inscriptions -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-book me-2"></i>Inscriptions ({{ inscriptions|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if inscriptions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Promotion</th>
+                            <th>Filière</th>
+                            <th>Année</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inscription in inscriptions %}
+                        <tr>
+                            <td>{{ inscription.promotion.libelle }}</td>
+                            <td>{{ inscription.promotion.filiere.libelle }}</td>
+                            <td>{{ inscription.annee }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">Aucune inscription.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Notes et évaluations -->
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Évaluations et Notes ({{ cotations|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if cotations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Cours</th>
+                            <th>Type d'évaluation</th>
+                            <th>Note</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cotation in cotations %}
+                        <tr>
+                            <td>{{ cotation.evaluation.date|date:"d/m/Y" }}</td>
+                            <td>{{ cotation.evaluation.cours.libelle }}</td>
+                            <td>{{ cotation.evaluation.type_evaluation.libelle }}</td>
+                            <td>
+                                {% if cotation.note is not None %}
+                                    <strong>{{ cotation.note }}</strong>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cotation.evaluation.is_published %}
+                                    <span class="badge bg-success">Publié</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Brouillon</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">Aucune évaluation enregistrée.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

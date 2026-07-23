@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.db.models import Count, Q
 from .models import *
 from .forms import UserRegistrationForm, UserProfileForm, PlanificationExamenForm, PropositionCoursForm
@@ -537,6 +537,19 @@ class CoursListView(BaseCRUDListView):
     update_url_name = 'cours_update'
     delete_url_name = 'cours_delete'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['semestres'] = Semestre.objects.all().order_by('libelle')
+        context['selected_semestre'] = self.request.GET.get('semestre')
+        return context
+
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related('filiere', 'semestre', 'annee_etude')
+        semestre_id = self.request.GET.get('semestre')
+        if semestre_id:
+            queryset = queryset.filter(semestre_id=semestre_id)
+        return queryset
+
 class CoursCreateView(BaseCRUDCreateView):
     model = Cours
     fields = ['filiere', 'semestre', 'code', 'libelle', 'volume_horaire']
@@ -848,6 +861,22 @@ class EtudiantUpdateView(AdminRequiredMixin, UpdateView):
         context.update({
             'model_name': getattr(self, 'model_name', 'Étudiant'),
             'action': getattr(self, 'action', 'Modifier'),
+        })
+        return context
+
+class EtudiantDetailView(ChefFiliereOrAdminMixin, DetailView):
+    model = Etudiant
+    template_name = 'crud/etudiant_detail.html'
+    context_object_name = 'etudiant'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        etudiant = self.object
+        context.update({
+            'model_name': 'Étudiant',
+            'singular_name': 'Étudiant',
+            'inscriptions': etudiant.inscriptions.select_related('promotion').all(),
+            'cotations': etudiant.cotations.select_related('evaluation', 'evaluation__cours').all(),
         })
         return context
 

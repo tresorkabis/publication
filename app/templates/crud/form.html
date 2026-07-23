@@ -1,22 +1,65 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ action }} {{ model_name }}</h1>
-    <form method="post" enctype="multipart/form-data" class="space-y-6">
-        {% csrf_token %}
-        <div class="grid gap-5 md:grid-cols-2">
-            {% for field in form %}
-                <div class="space-y-2">
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700">{{ field.label }}</label>
-                    {{ field }}
-                    {% for error in field.errors %}
-                        <p class="text-sm text-red-600">{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endfor %}
+<div class="container" style="max-width: 800px;">
+    <div class="bg-white rounded-3 shadow-sm border p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h4 fw-bold text-dark">{{ action }} {{ model_name }}</h1>
+                <p class="text-muted small">Remplissez le formulaire ci-dessous.</p>
+            </div>
+            <a href="{% if list_url_name %}{% url list_url_name %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-2"></i>Retour
+            </a>
         </div>
-        <button type="submit" class="bg-blue-700 text-white px-5 py-3 rounded-xl font-semibold hover:bg-blue-800 transition">{{ action }}</button>
-    </form>
+
+        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ form.non_field_errors }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+
+            <div class="row g-3">
+                {% for field in form %}
+                    {% if field.widget_type != 'hidden' %}
+                        <div class="{% if field.field.widget.input_type == 'file' %}col-12{% else %}col-md-6{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span class="text-danger">*</span>
+                                {% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                            {% if field.help_text %}
+                                <div class="form-text text-muted">
+                                    {{ field.help_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4 py-2">
+                    <i class="fas fa-save me-2"></i>{{ action }}
+                </button>
+                <a href="{% if list_url_name %}{% url list_url_name %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline-secondary px-4 py-2">
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
