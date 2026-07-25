@@ -23,6 +23,7 @@ urlpatterns = [
     path('resultats/modifier-note/<int:cotation_id>/', views.edit_mark, name='edit_mark'),
     path('resultats/supprimer-note/<int:cotation_id>/', views.delete_mark, name='delete_mark'),
     path('resultats/publier/<int:evaluation_id>/', views.publish_evaluation, name='publish_evaluation'),
+    path('resultats/valider-moyenne/<int:etudiant_id>/', views.valider_moyenne_etudiant, name='valider_moyenne_etudiant'),
     path('resultats/planifier-examen/', views.planifier_examen, name='planifier_examen'),
     path('resultats/publier-horaires/', views.publier_horaires_examens, name='publier_horaires_examens'),
     path('resultats/proposer-cours/', views.proposer_cours, name='proposer_cours'),

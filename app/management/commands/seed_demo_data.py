@@ -214,11 +214,13 @@ class Command(BaseCommand):
                 }
             )
             
-            filiere = Filiere.objects.create(
+            filiere, _ = Filiere.objects.get_or_create(
                 code=f_data['code'],
-                libelle=f_data['libelle'],
-                description=f'Filière {f_data["libelle"]} - Formation de qualité',
-                chef=chef_personnel
+                defaults={
+                    'libelle': f_data['libelle'],
+                    'description': f'Filière {f_data["libelle"]} - Formation de qualité',
+                    'chef': chef_personnel,
+                }
             )
             created_filieres.append(filiere)
             

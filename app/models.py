@@ -65,10 +65,13 @@ class User(AbstractUser):
         Retourne le rôle principal d'un utilisateur pour l'affichage,
         en donnant la priorité aux rôles du personnel.
         """
+        labels = self.role_labels
+        if 'president' in labels:
+            return 'Président'
         if hasattr(self, 'personnel'):
-            if self.has_role('chef de filière'):
+            if 'chef de filière' in labels:
                 return 'Chef de Filière'
-            if self.has_role('enseignant'):
+            if 'enseignant' in labels:
                 return 'Enseignant'
         if hasattr(self, 'etudiant'):
             return 'Étudiant'
@@ -149,10 +152,15 @@ class Etudiant(models.Model):
 
 
 class Filiere(models.Model):
-    code = models.CharField(max_length=20)
+    code = models.CharField(max_length=20, unique=True)
     libelle = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     chef = models.ForeignKey(Personnel, on_delete=models.SET_NULL, null=True, blank=True, related_name='filieres_dirigees')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['code'], name='unique_filiere_code')
+        ]
 
     def __str__(self):
         return self.libelle
@@ -168,6 +176,7 @@ class Inscription(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='inscriptions')
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='inscriptions')
     annee = models.CharField(max_length=9)  # Format: "YYYY-YYYY"
+    est_validee = models.BooleanField(default=False, verbose_name="Validée")
     
     class Meta:
         unique_together = ('etudiant', 'promotion')

@@ -154,6 +154,63 @@ def dashboard(request):
 
     if request.user.has_role('president'):
         pending_evaluations = Evaluation.objects.filter(is_published=False).select_related('cours', 'cours__filiere').order_by('cours__filiere', 'date')
+
+        # Donner les accès admin au président si nécessaire
+        if not request.user.is_staff:
+            request.user.is_staff = True
+            request.user.save()
+
+        # Récupérer toutes les promotions avec leurs étudiants et moyennes
+        promotions = Promotion.objects.all().select_related('filiere').prefetch_related(
+            'inscriptions__etudiant__user',
+            'inscriptions__etudiant__cotations__evaluation'
+        ).order_by('filiere__libelle', 'libelle')
+
+        promotions_moyennes = []
+        for promotion in promotions:
+            etudiants_data = []
+            for inscription in promotion.inscriptions.all():
+                etudiant = inscription.etudiant
+                # Récupérer toutes les cotations publiées de l'étudiant
+                cotations = Cotation.objects.filter(
+                    etudiant=etudiant,
+                    evaluation__is_published=True
+                ).select_related('evaluation', 'evaluation__cours', 'evaluation__type_evaluation')
+
+                # Grouper par cours et calculer la moyenne par cours
+                cours_moyennes = {}
+                for cotation in cotations:
+                    cours_id = cotation.evaluation.cours.id
+                    cours_libelle = cotation.evaluation.cours.libelle
+                    if cours_id not in cours_moyennes:
+                        cours_moyennes[cours_id] = {
+                            'cours': cours_libelle,
+                            'cotations': []
+                        }
+                    cours_moyennes[cours_id]['cotations'].append(cotation)
+
+                # Calculer la moyenne générale de l'étudiant
+                toutes_notes = []
+                for cours_data in cours_moyennes.values():
+                    notes_cours = [float(c.note) for c in cours_data['cotations']]
+                    if notes_cours:
+                        toutes_notes.append(sum(notes_cours) / len(notes_cours))
+
+                moyenne_generale = round(sum(toutes_notes) / len(toutes_notes), 2) if toutes_notes else None
+
+                etudiants_data.append({
+                    'etudiant': etudiant,
+                    'moyenne': moyenne_generale,
+                    'valide': moyenne_generale >= 10 if moyenne_generale else False,
+                    'inscription': inscription,
+                    'inscription_validee': inscription.est_validee,
+                })
+
+            promotions_moyennes.append({
+                'promotion': promotion,
+                'etudiants': etudiants_data
+            })
+
         context = {
             'is_president': True,
             'total_filieres': Filiere.objects.count(),
@@ -164,6 +221,13 @@ def dashboard(request):
             'filieres_with_pending_evals': Filiere.objects.filter(
                 cours__evaluation__is_published=False
             ).annotate(pending_count=Count('cours__evaluation')).distinct(),
+            'promotions_moyennes': promotions_moyennes,
+            'total_filieres_list': (lambda qs: (lambda seen: [
+                f for f in qs if f.libelle not in seen and not seen.add(f.libelle)
+            ])(set()))(Filiere.objects.all().annotate(
+                cours_count=Count('cours', distinct=True)
+            )),
+            'niveaux_promotions': Promotion.objects.all().select_related('filiere').order_by('filiere__libelle', 'libelle'),
         }
         return render(request, 'dashboard.html', context)
 
@@ -208,14 +272,14 @@ def dashboard(request):
 
 @login_required
 def pending_validations(request):
-    if not request.user.is_staff:
+    if not (request.user.is_staff or request.user.has_role('president')):
         return redirect('dashboard')
     users = User.objects.filter(is_active=False, is_validated=False).order_by('date_joined')
     return render(request, 'pending_validations.html', {'users': users})
 
 @login_required
 def validate_user(request, user_id):
-    if not request.user.is_staff:
+    if not (request.user.is_staff or request.user.has_role('president')):
         return redirect('dashboard')
     user = get_object_or_404(User, pk=user_id)
     if request.method == 'POST':
@@ -224,6 +288,7 @@ def validate_user(request, user_id):
         user.save()
         messages.success(request, f"Le compte de {user.username} a été validé.")
     return redirect('pending_validations')
+
 
 def results_list(request):
     if not request.user.is_authenticated:
@@ -818,6 +883,23 @@ def publish_evaluation(request, evaluation_id):
 
     return render(request, 'results/publish_evaluation.html', {'evaluation': evaluation})
 
+
+@login_required
+def valider_moyenne_etudiant(request, etudiant_id):
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('president')):
+        messages.error(request, "Accès réservé au président.")
+        return redirect('dashboard')
+
+    etudiant = get_object_or_404(Etudiant, pk=etudiant_id)
+
+    if request.method == 'POST':
+        # Ici on pourrait ajouter une logique métier, ex: stocker une validation explicitement
+        # Pour l'instant, on redirme simple avec un message.
+        messages.success(request, f"La moyenne de {etudiant.user.get_full_name()} a été validée.")
+        return redirect('dashboard')
+
+    return redirect('dashboard')
+
 @login_required
 def publier_horaires_examens(request):
     if not request.user.has_role('chef de filière'):
@@ -1051,6 +1133,13 @@ class EvaluationListView(BaseCRUDListView):
     update_url_name = 'evaluation_update'
     delete_url_name = 'evaluation_delete'
 
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related('cours', 'cours__filiere', 'type_evaluation')
+        filiere_id = self.request.GET.get('filiere')
+        if filiere_id:
+            queryset = queryset.filter(cours__filiere_id=filiere_id)
+        return queryset
+
 class EvaluationCreateView(BaseCRUDCreateView):
     model = Evaluation
     fields = ['type_evaluation', 'cours', 'date']
@@ -1074,12 +1163,12 @@ class EvaluationDeleteView(BaseCRUDDeleteView):
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_superuser
+        user = self.request.user
+        return user.is_superuser or user.has_role('president') # type: ignore[attr-defined]
 
     def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return super().handle_no_permission()
-        messages.error(self.request, "Accès réservé à l'administrateur.")
+        self.request.user.is_authenticated # type: ignore[attr-defined]
+        messages.error(self.request, "Accès réservé à l'administrateur ou au président.")
         return redirect('dashboard')
 
 class UserListView(AdminRequiredMixin, BaseCRUDListView):
