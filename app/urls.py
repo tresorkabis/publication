@@ -10,6 +10,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/enseignant/', views.dashboard_enseignant, name='dashboard_enseignant'),
     path('dashboard/enseignant/cours/', views.cours_enseignant, name='cours_enseignant'),
+    path('dashboard/enseignant/cours/<int:cours_id>/fiche-cotes/', views.fiche_de_cotes_cours, name='fiche_de_cotes_cours'),
     path('dashboard/enseignant/evaluations/', views.evaluations_enseignant, name='evaluations_enseignant'),
     path('dashboard/enseignant/saisie-notes/<int:evaluation_id>/', views.saisie_notes_enseignant, name='saisie_notes_enseignant'),
     path('dashboard/enseignant/profil/', views.profil_enseignant, name='profil_enseignant'),

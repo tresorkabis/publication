@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #c7d2fe;
+        --success: #10b981;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+    }
+
+    .fiche-cotes-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .page-title i {
+        color: var(--primary);
+    }
+
+    .page-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        margin-top: -0.5rem;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: white;
+        color: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: var(--light);
+        border-color: var(--primary);
+    }
+
+    .fiche-container {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+    }
+
+    .fiche-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .fiche-table th {
+        background: var(--light);
+        color: #6b7280;
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        font-size: 0.875rem;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .fiche-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+
+    .fiche-table tr:hover {
+        background: rgba(79, 70, 229, 0.03);
+    }
+
+    .student-name {
+        font-weight: 500;
+        color: var(--dark);
+    }
+
+    .note-cell {
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .moyenne-cell {
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .moyenne-reussite {
+        color: var(--success);
+    }
+
+    .moyenne-echec {
+        color: var(--danger);
+    }
+
+</style>
+
+<div class="fiche-cotes-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-file-invoice"></i>
+                Fiche de Cotes
+            </h1>
+            <p class="page-subtitle">{{ cours.libelle }} ({{ cours.code }})</p>
+        </div>
+        <a href="{% url 'cours_enseignant' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Retour à mes cours
+        </a>
+    </div>
+
+    <div class="fiche-container">
+        <div class="table-responsive">
+            <table class="fiche-table">
+                <thead>
+                    <tr>
+                        <th>Étudiant</th>
+                        {% for type_eval in types_evaluations %}
+                            <th class="text-center">{{ type_eval }}<br><small style="font-weight: 400; color: #9ca3af;">/{{ notes_max|get_item:type_eval }}</small></th>
+                        {% endfor %}
+                        <th class="text-center">Moyenne<br><small style="font-weight: 400; color: #9ca3af;">/20</small></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in fiche_de_cotes %}
+                    <tr>
+                        <td>
+                            <div class="student-name">{{ data.etudiant.user.get_full_name }}</div>
+                            <div class="text-xs text-gray-500">{{ data.etudiant.matricule }}</div>
+                        </td>
+                        {% for type_eval in types_evaluations %}
+                            <td class="note-cell">{{ data.notes|get_item:type_eval|default:"-" }}</td>
+                        {% endfor %}
+                        <td class="moyenne-cell {% if data.moyenne >= 10 %}moyenne-reussite{% else %}moyenne-echec{% endif %}">
+                            {{ data.moyenne|default:"-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

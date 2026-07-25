@@ -41,6 +41,30 @@
         color: var(--primary);
     }
 
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
     .cours-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -49,11 +73,12 @@
 
     .cours-card {
         background: white;
+        display: flex;
+        flex-direction: column;
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         border: 1px solid var(--border);
-        transition: all 0.3s ease;
     }
 
     .cours-card:hover {
@@ -288,6 +313,11 @@
                     <div class="cours-stat-label">Publiées</div>
                 </div>
             </div>
+
+            <a href="{% url 'fiche_de_cotes_cours' cours_id=item.cours.id %}" class="btn-action btn-primary" style="margin-bottom: 0.5rem;">
+                <i class="fas fa-file-invoice"></i>
+                Voir la fiche de cotes
+            </a>
 
             {% if item.evaluations %}
             <div class="evaluations-section">

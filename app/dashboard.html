@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+
+    {% if is_student %}
+        {# --- DASHBOARD ÉTUDIANT --- #}
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Tableau de bord de l'Étudiant</h1>
+        <p class="text-lg text-gray-600 mb-6">Bienvenue, {{ student.user.get_full_name }} !</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-lg font-semibold text-gray-500">Matricule</h3>
+                <p class="text-2xl font-bold text-gray-800">{{ student.matricule }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-lg font-semibold text-gray-500">Moyenne Générale (notes publiées)</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ student_average|default:"N/A" }} / 20</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-center">
+                <a href="{% url 'print_results' %}" class="w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300">
+                    Imprimer mon bulletin
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Mes Dernières Notes</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cours</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Évaluation</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in student_cotations_list %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ item.cotation.evaluation.cours.libelle }}</div>
+                                <div class="text-sm text-gray-500">{{ item.cotation.evaluation.cours.filiere.code }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.cotation.evaluation.type_evaluation.libelle }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.cotation.evaluation.date|date:"d/m/Y" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if item.cotation.evaluation.is_published %}
+                                    <span class="px-3 py-1 text-sm font-bold rounded-full
+                                           {% if item.status == 'reussite' %} bg-green-100 text-green-800 
+                                           {% elif item.status == 'echec' %} bg-red-100 text-red-800 
+                                           {% else %} bg-gray-100 text-gray-800 
+                                           {% endif %}">
+                                        {{ item.cotation.note|default:"-" }}
+                                    </span>
+                                {% else %}
+                                    <span class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        En attente
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if item.cotation.evaluation.is_published %}
+                                    <span class="font-semibold {% if item.status == 'reussite' %}text-green-600{% elif item.status == 'echec' %}text-red-600{% else %}text-gray-500{% endif %}">
+                                        Publiée
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-500">Non publiée</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Aucune note disponible pour le moment.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {% elif is_chef_filiere %}
+        {# --- DASHBOARD CHEF DE FILIERE --- #}
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Tableau de bord du Chef de Filière</h1>
+        <p>Contenu spécifique au chef de filière...</p>
+        {# ... Le reste du contenu pour le chef de filière ... #}
+
+    {% elif is_enseignant %}
+        {# --- DASHBOARD ENSEIGNANT --- #}
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Tableau de bord de l'Enseignant</h1>
+        <p>Contenu spécifique à l'enseignant...</p>
+        {# ... Le reste du contenu pour l'enseignant ... #}
+
+    {% else %}
+        {# --- DASHBOARD ADMIN / STAFF --- #}
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Tableau de bord Administrateur</h1>
+        <p>Contenu spécifique à l'administrateur...</p>
+        {# ... Le reste du contenu pour l'admin ... #}
+
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {% if not is_student and not is_chef_filiere %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const ctx = document.getElementById('studentsChart').getContext('2d');
+                const studentsChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {{ promotions_data|safe }},
+                        datasets: [{
+                            label: 'Nombre d\'étudiants',
+                            data: {{ students_count_data|safe }},
+                            backgroundColor: [
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                                'rgba(255, 159, 64, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 255, 255, 1)'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Répartition des étudiants par promotion'
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+    {% endif %}
+{% endblock %}

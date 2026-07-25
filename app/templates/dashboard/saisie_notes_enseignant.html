@@ -169,6 +169,13 @@
         font-weight: 600;
     }
 
+    .note-input.is-echec {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: var(--danger);
+        color: var(--danger);
+        font-weight: 600;
+    }
+
     .btn-submit {
         display: inline-flex;
         align-items: center;
@@ -277,11 +284,6 @@
             </div>
         </div>
 
-        <div class="alert alert-info mt-3 mb-0" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>Note :</strong> Les notes existantes apparaissent avec un fond vert. Vous pouvez les modifier directement dans les champs. Cliquez sur "Enregistrer les notes" pour sauvegarder vos modifications.
-        </div>
-
     <div class="notes-form">
         <form method="post" action="{% url 'saisie_notes_enseignant' evaluation_id=evaluation.pk %}">
             {% csrf_token %}
@@ -311,13 +313,13 @@
                             <td>{{ item.student.matricule|default:"N/A" }}</td>
                             <td>
                                 <input 
-                                    type="number" 
+                                    type="text" 
+                                    inputmode="decimal"
                                     name="note_{{ item.student.pk }}" 
-                                    class="note-input {% if item.note is not None %}has-value{% endif %}"
+                                    class="note-input {% if item.status == 'reussite' %}has-value{% elif item.status == 'echec' %}is-echec{% endif %}"
                                     value="{{ item.note|default_if_none:'' }}"
                                     min="0" 
                                     max="20" 
-                                    step="0.25"
                                     placeholder="--"
                                 >
                             </td>

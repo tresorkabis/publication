@@ -15,6 +15,10 @@ User = get_user_model()
 class Command(BaseCommand):
     help = 'Génère des données de démonstration pour l\'application ESFORCA'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.teacher_accounts = []
+
     def handle(self, *args, **options):
         self.stdout.write("🚀 Génération des données de démonstration...")
         
@@ -50,6 +54,11 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS("✅ Données de démonstration générées avec succès!"))
         
+        self.stdout.write(self.style.WARNING("\n=== Comptes enseignants (mot de passe: demo) ==="))
+        if self.teacher_accounts:
+            for username in sorted(self.teacher_accounts):
+                self.stdout.write(f"  - {username}")
+        
     def create_annees_etude(self):
         self.stdout.write("  🎓 Création des années d'étude LMD...")
         AnneeEtude.objects.get_or_create(code='L1', defaults={'libelle': 'Licence 1', 'ordre': 1})
@@ -66,10 +75,10 @@ class Command(BaseCommand):
         
         # === Filieres ===
         filieres_data = [
-            {'code': 'INF', 'libelle': 'Informatique de Gestion'},
-            {'code': 'MATH', 'libelle': 'Mathématiques et Applications'},
-            {'code': 'PHY', 'libelle': 'Physique Fondamentale'},
-            {'code': 'GEST', 'libelle': 'Gestion des Entreprises'},
+            {'code': 'GL', 'libelle': 'Génie Logiciel'},
+            {'code': 'RTM', 'libelle': 'Réseau et Technique de Maintenance'},
+            {'code': 'SD', 'libelle': 'Secrétariat de Direction'},
+            {'code': 'SC', 'libelle': 'Sciences Commerciales'},
         ]
         
         # === SUPER ADMIN ===
@@ -110,6 +119,34 @@ class Command(BaseCommand):
         admin2.save()
         role_admin, _ = Role.objects.get_or_create(libelle='administrateur')
         UtilisateurRole.objects.get_or_create(user=admin2, role=role_admin)
+        
+        # === PRESIDENT ===
+        president_user, _ = User.objects.get_or_create(
+            email='president@esforca.cd',
+            defaults={
+                'username': 'president',
+                'nom': 'Nkongolo',
+                'postnom': 'Ilunga',
+                'prenom': 'Patrice',
+                'sexe': 'M',
+                'tel': '+243800000004',
+                'is_staff': True,
+                'is_active': True,
+                'is_validated': True,
+            }
+        )
+        president_user.set_password('demo')
+        president_user.save()
+        role_pres, _ = Role.objects.get_or_create(libelle='president')
+        UtilisateurRole.objects.get_or_create(user=president_user, role=role_pres)
+        fonction_pres, _ = Fonction.objects.get_or_create(intitule='Président du Conseil d\'Administration')
+        Personnel.objects.get_or_create(
+            user=president_user,
+            defaults={
+                'fonction': fonction_pres,
+                'grade': 'Président'
+            }
+        )
         
         # === SECRETAIRE ===
         secretaire_user, _ = User.objects.get_or_create(
@@ -188,10 +225,11 @@ class Command(BaseCommand):
             # Créer quelques enseignants par filière
             for j in range(2):
                 ens_email = f'enseignant.{f_data["code"].lower()}{j+1}@esforca.cd'
+                username = f'ens_{f_data["code"].lower()}{j+1}'
                 ens_user, _ = User.objects.get_or_create(
                     email=ens_email,
                     defaults={
-                        'username': f'ens_{f_data["code"].lower()}{j+1}',
+                        'username': username,
                         'nom': f'Enseignant_{f_data["code"]}_{j+1}',
                         'postnom': random.choice(postnoms),
                         'prenom': f'{random.choice(["Jean", "Marie", "Paul", "Sophie", "Marc", "Anne"])}',
@@ -203,6 +241,7 @@ class Command(BaseCommand):
                 )
                 ens_user.set_password('demo')
                 ens_user.save()
+                self.teacher_accounts.append(username)
                 role_ens, _ = Role.objects.get_or_create(libelle='enseignant')
                 UtilisateurRole.objects.get_or_create(user=ens_user, role=role_ens)
                 
@@ -349,25 +388,25 @@ class Command(BaseCommand):
         annees = {a.code: a for a in AnneeEtude.objects.all()}
         
         matieres_par_filiere = {
-            'INF': {
+            'GL': {
                 'L1': [('Algorithmique', 5), ('Base de données', 5), ('Programmation Web', 4), ('Introduction aux réseaux', 4)],
-                'L2': [('Réseaux avancés', 5), ('Sécurité informatique', 5), ('Systèmes d\'exploitation', 4), ('Génie Logiciel', 4)],
+                'L2': [('Programmation Orientée Objet', 5), ('Génie Logiciel 1', 5), ('Systèmes d\'exploitation', 4), ('Interfaces Homme-Machine', 4)],
                 'L3': [('Intelligence Artificielle', 6), ('Data Science', 5), ('Cloud Computing', 5), ('Projet de fin d\'études', 8)],
             },
-            'MATH': {
-                'L1': [('Analyse 1', 5), ('Algèbre 1', 5), ('Statistiques', 4), ('Géométrie', 4)],
-                'L2': [('Analyse 2', 5), ('Algèbre 2', 5), ('Probabilités', 4), ('Calcul différentiel', 4)],
-                'L3': [('Mathématiques financières', 5), ('Topologie', 5), ('Analyse numérique', 5), ('Projet', 8)],
+            'RTM': {
+                'L1': [('Architecture des ordinateurs', 5), ('Électronique numérique', 5), ('Systèmes Logiques', 4), ('Maintenance Matérielle', 4)],
+                'L2': [('Réseaux Locaux', 5), ('Sécurité des Réseaux', 5), ('Administration Système Linux', 4), ('Télécommunications', 4)],
+                'L3': [('Réseaux étendus (WAN)', 5), ('Virtualisation', 5), ('Supervision réseau', 5), ('Projet de fin de cycle', 8)],
             },
-            'PHY': {
-                'L1': [('Mécanique', 5), ('Thermodynamique', 5), ('Électromagnétisme', 4), ('Optique', 4)],
-                'L2': [('Mécanique quantique', 5), ('Physique nucléaire', 5), ('Physique des solides', 4), ('Astrophysique', 4)],
-                'L3': [('Physique des particules', 5), ('Mécanique des fluides', 5), ('Physique statistique', 5), ('Projet', 8)],
+            'SD': {
+                'L1': [('Dactylographie', 5), ('Techniques de communication', 5), ('Droit du travail', 4), ('Organisation de bureau', 4)],
+                'L2': [('Sténographie', 5), ('Gestion du temps', 5), ('Logiciels bureautiques avancés', 4), ('Prise de notes', 4)],
+                'L3': [('Gestion de projet événementiel', 5), ('Communication de crise', 5), ('Anglais des affaires', 5), ('Stage professionnel', 8)],
             },
-            'GEST': {
-                'L1': [('Comptabilité', 5), ('Marketing', 5), ('Économie', 4), ('Management', 4)],
-                'L2': [('Ressources Humaines', 5), ('Finance', 5), ('Droit des affaires', 4), ('Entrepreneuriat', 4)],
-                'L3': [('Stratégie d\'entreprise', 5), ('Audit', 5), ('Gestion de projet', 5), ('Projet', 8)],
+            'SC': {
+                'L1': [('Comptabilité générale', 5), ('Marketing Fondamental', 5), ('Introduction à l\'économie', 4), ('Principes de Management', 4)],
+                'L2': [('Gestion des Ressources Humaines', 5), ('Finance d\'entreprise', 5), ('Droit des affaires', 4), ('Entrepreneuriat', 4)],
+                'L3': [('Stratégie d\'entreprise', 5), ('Audit et Contrôle de Gestion', 5), ('Gestion de projet', 5), ('Projet de création d\'entreprise', 8)],
             },
         }
         
@@ -416,9 +455,16 @@ class Command(BaseCommand):
                     defaults={}
                 )
                 
-                # Noter tous les étudiants inscrits dans les promotions de ce cours
+                # Correction : Noter uniquement les étudiants inscrits à la bonne année d'étude pour ce cours.
+                # Cela évite de donner des notes à des étudiants de L3 pour un cours de L1,
+                # et surtout, cela empêche de créer des notes (et donc des profils étudiants) pour le personnel.
+                if not cours.annee_etude:
+                    continue
+
                 inscriptions = Inscription.objects.filter(
-                    promotion__filiere=cours.filiere
+                    promotion__filiere=cours.filiere, # Même filière
+                    promotion__libelle__icontains=cours.annee_etude.code, # Même année d'étude (ex: "L1")
+                    etudiant__user__personnel__isnull=True # S'assurer que c'est bien un étudiant
                 )
                 for inscription in inscriptions:
                     note = round(random.uniform(5, 18), 2)
@@ -514,8 +560,8 @@ class Command(BaseCommand):
             return
         
         # Prioriser les cours d'informatique
-        cours_informatique = list(Cours.objects.filter(filiere__code='INF'))
-        autres_cours = list(Cours.objects.exclude(filiere__code='INF'))
+        cours_informatique = list(Cours.objects.filter(filiere__code__in=['GL', 'RTM']))
+        autres_cours = list(Cours.objects.exclude(filiere__code__in=['GL', 'RTM']))
         
         # Assurer qu'au moins 3 enseignants ont des cours pour les tests
         enseignants_a_assigner = enseignants[:3]

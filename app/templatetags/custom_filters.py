@@ -31,3 +31,11 @@ def last_item(lst):
         return list(lst)[-1]
     except (IndexError, TypeError, ValueError):
         return None
+
+@register.filter
+def get_item(dictionary, key):
+    """Récupère une valeur d'un dictionnaire par sa clé"""
+    try:
+        return dictionary.get(key)
+    except (AttributeError, TypeError):
+        return None

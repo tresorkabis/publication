@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
 from .models import *
 from .forms import UserRegistrationForm, UserProfileForm, PlanificationExamenForm, PropositionCoursForm
 from django.contrib.auth import login, authenticate
@@ -69,18 +69,49 @@ def dashboard(request):
     
     if hasattr(request.user, 'etudiant'):
         student = request.user.etudiant
-        student_cotations = (
+        cotations_qs = (
             Cotation.objects.filter(etudiant=student)
             .select_related('evaluation', 'evaluation__cours', 'evaluation__type_evaluation')
             .order_by('-evaluation__date', '-id')
         )
+
+        # Regrouper les cotations par cours
+        cours_notes = {}
+        for c in cotations_qs:
+            cours_id = c.evaluation.cours.id
+            if cours_id not in cours_notes:
+                cours_notes[cours_id] = {
+                    'cours': c.evaluation.cours,
+                    'cotations': [],
+                    'total_pondere': 0,
+                    'total_coeffs': 0,
+                    'moyenne': 0,
+                }
+            
+            status = 'reussite' if c.note >= 10 else 'echec'
+            cours_notes[cours_id]['cotations'].append({'cotation': c, 'status': status})
+            
+            # Calcul pour la moyenne pondérée (uniquement pour les notes publiées)
+            if c.evaluation.is_published:
+                coeff = c.evaluation.coefficient
+                cours_notes[cours_id]['total_pondere'] += float(c.note) * coeff
+                cours_notes[cours_id]['total_coeffs'] += coeff
+
+        # Calculer la moyenne finale pour chaque cours
+        moyennes_globales = []
+        for data in cours_notes.values():
+            if data['total_coeffs'] > 0:
+                moyenne_cours = data['total_pondere'] / data['total_coeffs']
+                data['moyenne'] = round(moyenne_cours, 2)
+                moyennes_globales.append(moyenne_cours)
+        
+        # Calcul de la moyenne générale de l'étudiant sur tous les cours
+        moyenne_generale = round(sum(moyennes_globales) / len(moyennes_globales), 2) if moyennes_globales else None
+
         context = {
             'student': student,
-            'student_cotations': student_cotations,
-            'student_average': round(
-                sum(float(c.note) for c in student_cotations if c.note is not None) / len([c for c in student_cotations if c.note is not None])
-                , 2
-            ) if student_cotations.filter(note__isnull=False).exists() else None,
+            'cours_notes': cours_notes.values(),
+            'student_average': moyenne_generale,
             'is_student': True,
         }
         return render(request, 'dashboard.html', context)
@@ -120,6 +151,22 @@ def dashboard(request):
             'periodes_examens': chef_periodes_examens,
         }
         return render(request, 'dashboard.html', context)
+
+    if request.user.has_role('president'):
+        pending_evaluations = Evaluation.objects.filter(is_published=False).select_related('cours', 'cours__filiere').order_by('cours__filiere', 'date')
+        context = {
+            'is_president': True,
+            'total_filieres': Filiere.objects.count(),
+            'total_cours': Cours.objects.count(),
+            'total_enseignants': Personnel.objects.filter(user__utilisateur_roles__role__libelle='enseignant').count(),
+            'pending_evaluations': pending_evaluations,
+            'pending_evaluations_count': pending_evaluations.count(),
+            'filieres_with_pending_evals': Filiere.objects.filter(
+                cours__evaluation__is_published=False
+            ).annotate(pending_count=Count('cours__evaluation')).distinct(),
+        }
+        return render(request, 'dashboard.html', context)
+
 
     # Statistiques générales
     total_users = User.objects.count()
@@ -328,8 +375,7 @@ def dashboard_enseignant(request):
         'filiere', 'semestre', 'annee_etude'
     ).annotate(
         nb_etudiants=Count('filiere__promotion__inscriptions__etudiant', distinct=True, filter=Q(
-            filiere__promotion__libelle__icontains=('annee_etude__code'))
-        )
+            filiere__promotion__libelle__icontains=F('annee_etude__code')))
     )
     
     # Évaluations à venir pour les cours de l'enseignant
@@ -462,6 +508,91 @@ def cours_enseignant(request):
     }
     
     return render(request, 'dashboard/cours_enseignant.html', context)
+
+@login_required
+def fiche_de_cotes_cours(request, cours_id):
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    cours = get_object_or_404(Cours, pk=cours_id)
+
+    # Sécurité : Vérifier que l'enseignant est bien assigné à ce cours
+    is_assigned = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        cours=cours,
+        est_accepte=True
+    ).exists()
+
+    if not is_assigned:
+        messages.error(request, "Vous n'êtes pas autorisé à consulter cette fiche de cotes.")
+        return redirect('cours_enseignant')
+
+    # Récupérer les étudiants inscrits à la bonne année d'étude
+    students = Etudiant.objects.filter(
+        inscriptions__promotion__filiere=cours.filiere,
+        inscriptions__promotion__libelle__icontains=cours.annee_etude.code
+    ).distinct().select_related('user').order_by('user__nom', 'user__postnom', 'user__prenom')
+
+    # Récupérer toutes les évaluations et cotations pour ce cours
+    evaluations = Evaluation.objects.filter(cours=cours).select_related('type_evaluation')
+    cotations = Cotation.objects.filter(evaluation__in=evaluations).select_related('evaluation', 'evaluation__type_evaluation')
+
+    # Organiser les données pour la fiche de cotes
+    fiche_de_cotes = []
+    for student in students:
+        student_data = {
+            'etudiant': student,
+            'notes': {}, # ex: {'Examen': 15, 'Interrogation': 12}
+            'total_pondere': 0,
+            'total_coeffs': 0,
+            'moyenne': None
+        }
+
+        # Regrouper les notes par type d'évaluation
+        for cotation in cotations.filter(etudiant=student):
+            type_eval = cotation.evaluation.type_evaluation.libelle
+            note_value = float(cotation.note)
+
+            # Ramener la note sur le barème correspondant (Travail Pratique sur 5, Interrogation sur 5, Examen sur 10)
+            if type_eval == 'Travail Pratique':
+                note_value = round(note_value / 4, 1)  # Convertir de /20 à /5
+            elif type_eval == 'Interrogation':
+                note_value = round(note_value / 4, 1)  # Convertir de /20 à /5
+            elif type_eval == 'Examen':
+                note_value = round(note_value / 2, 1)  # Convertir de /20 à /10
+
+            student_data['notes'][type_eval] = note_value
+
+        # Calculer la moyenne = somme des notes sur la ligne
+        somme_notes = 0
+        for type_eval in ['Travail Pratique', 'Interrogation', 'Examen']:
+            note = student_data['notes'].get(type_eval)
+            if note is not None:
+                somme_notes += note
+        student_data['moyenne'] = round(somme_notes)
+
+        fiche_de_cotes.append(student_data)
+
+    # Extraire les types d'évaluations pour les colonnes du tableau
+    types_evaluations = list(evaluations.values_list('type_evaluation__libelle', flat=True).distinct())
+
+    # Ordre personnalisé : Travail Pratique, Interrogation, Examen
+    ordre_types = {'Travail Pratique': 1, 'Interrogation': 2, 'Examen': 3}
+    types_evaluations.sort(key=lambda t: ordre_types.get(t, 99))
+
+    # Notes maximales par type d'évaluation
+    notes_max = {'Travail Pratique': 5, 'Interrogation': 5, 'Examen': 10}
+
+
+    context = {
+        'cours': cours,
+        'fiche_de_cotes': fiche_de_cotes,
+        'types_evaluations': types_evaluations,
+        'notes_max': notes_max,
+    }
+    return render(request, 'dashboard/fiche_de_cotes.html', context)
 
 @login_required
 def profil_enseignant(request):
@@ -631,8 +762,8 @@ def proposer_cours(request):
 
 @login_required
 def manage_marks(request, evaluation_id):
-    if not (hasattr(request.user, 'personnel') or request.user.has_role('chef de filière')):
-        messages.error(request, "Accès réservé au personnel ou aux chefs de filière.")
+    if not (request.user.has_role('chef de filière') or request.user.has_role('president')):
+        messages.error(request, "Accès réservé au chef de filière ou au président.")
         return redirect('dashboard')
 
     evaluation = Evaluation.objects.get(pk=evaluation_id)
@@ -667,16 +798,12 @@ def manage_marks(request, evaluation_id):
 
 @login_required
 def publish_evaluation(request, evaluation_id):
-    if not (hasattr(request.user, 'personnel') and request.user.has_role('chef de filière')):
-        messages.error(request, "Accès réservé au chef de filière.")
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('president')):
+        messages.error(request, "Accès réservé au président.")
         return redirect('dashboard')
 
-    chef_personnel = request.user.personnel
-    evaluation = get_object_or_404(
-        Evaluation,
-        pk=evaluation_id,
-        cours__filiere__in=chef_personnel.filieres_dirigees.all()
-    )
+    president_personnel = request.user.personnel
+    evaluation = get_object_or_404(Evaluation, pk=evaluation_id)
 
     if request.method == 'POST':
         if not Cotation.objects.filter(evaluation=evaluation).exists():

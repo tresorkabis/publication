@@ -59,6 +59,25 @@ class User(AbstractUser):
     def role_labels(self):
         return list(self.utilisateur_roles.select_related('role').values_list('role__libelle', flat=True))
 
+    @property
+    def display_role(self):
+        """
+        Retourne le rôle principal d'un utilisateur pour l'affichage,
+        en donnant la priorité aux rôles du personnel.
+        """
+        if hasattr(self, 'personnel'):
+            if self.has_role('chef de filière'):
+                return 'Chef de Filière'
+            if self.has_role('enseignant'):
+                return 'Enseignant'
+        if hasattr(self, 'etudiant'):
+            return 'Étudiant'
+        if self.is_superuser:
+            return 'Super Admin'
+        if self.is_staff:
+            return 'Staff'
+        return "Utilisateur"
+
     def has_role(self, libelle):
         return libelle in self.role_labels
 
