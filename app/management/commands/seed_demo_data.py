@@ -215,13 +215,13 @@ class Command(BaseCommand):
                     }
                 )
             
-            # Créer 20 étudiants par filière
+            # Créer 10 étudiants par filière
             noms = ['Mputu', 'Kalala', 'Tshimanga', 'Mbala', 'Lubamba', 'Nkosi', 'Kazadi', 'Mwamba', 'Banza', 'Kabongo',
                     'Ilunga', 'Mutombo', 'Mbuyi', 'Tshibanda', 'Ntumba', 'Kapinga', 'Mukendi', 'Kasongo', 'Bakulu', 'Mpoyi']
             prenoms_f = ['Grace', 'Esther', 'Ruth', 'Sarah', 'Deborah', 'Naomi', 'Rachel', 'Lea', 'Judith', 'Miriam']
             prenoms_m = ['Jean', 'Paul', 'Pierre', 'Andre', 'Simon', 'David', 'Joseph', 'Samuel', 'Daniel', 'Philippe']
             
-            for k in range(20):
+            for k in range(10):
                 nom = random.choice(noms)
                 prenom = random.choice(prenoms_m if k < 10 else prenoms_f)
                 sexe = 'M' if k < 10 else 'F'
@@ -275,13 +275,12 @@ class Command(BaseCommand):
             ).order_by('matricule'))
 
             # Répartir les étudiants entre les différents niveaux
-            # L1: étudiants 0-6 (7 étudiants)
-            # L2: étudiants 7-13 (7 étudiants)
-            # L3: étudiants 14-20 (7 étudiants)
-            # M1 et M2: pas d'étudiants pour l'instant (cycle master non implémenté)
+            # L1: étudiants 0-3 (4 étudiants)
+            # L2: étudiants 4-6 (3 étudiants)
+            # L3: étudiants 7-9 (3 étudiants)
 
             # Étudiants de L1 (uniquement inscription L1)
-            l1_students = etudiants[:7]
+            l1_students = etudiants[:4]
             l1_promo = Promotion.objects.get(filiere=filiere, libelle=f'L1 {filiere.code}')
             for etudiant in l1_students:
                 Inscription.objects.get_or_create(
@@ -291,7 +290,7 @@ class Command(BaseCommand):
                 )
 
             # Étudiants de L2 (inscriptions L1 et L2)
-            l2_students = etudiants[7:14]
+            l2_students = etudiants[4:7]
             l2_promo = Promotion.objects.get(filiere=filiere, libelle=f'L2 {filiere.code}')
             for etudiant in l2_students:
                 # Inscription L1 (année précédente)
@@ -308,7 +307,7 @@ class Command(BaseCommand):
                 )
 
             # Étudiants de L3 (inscriptions L1, L2 et L3)
-            l3_students = etudiants[14:21]
+            l3_students = etudiants[7:10]
             l3_promo = Promotion.objects.get(filiere=filiere, libelle=f'L3 {filiere.code}')
             for etudiant in l3_students:
                 # Inscription L1
@@ -509,16 +508,38 @@ class Command(BaseCommand):
         enseignants = list(Personnel.objects.filter(
             user__utilisateur_roles__role__libelle='enseignant'
         ))
-        cours_list = list(Cours.objects.all())
+        all_cours = list(Cours.objects.all())
         
-        if not cours_list or not enseignants:
+        if not all_cours or not enseignants:
             return
         
-        # Assigner plusieurs cours à chaque enseignant
-        for i, enseignant in enumerate(enseignants):
-            # Chaque enseignant reçoit 2 à 4 cours
-            nb_cours = random.randint(2, 4)
-            cours_assignes = random.sample(cours_list, min(nb_cours, len(cours_list)))
+        # Prioriser les cours d'informatique
+        cours_informatique = list(Cours.objects.filter(filiere__code='INF'))
+        autres_cours = list(Cours.objects.exclude(filiere__code='INF'))
+        
+        # Assurer qu'au moins 3 enseignants ont des cours pour les tests
+        enseignants_a_assigner = enseignants[:3]
+        for enseignant in enseignants_a_assigner:
+            nb_cours = random.randint(2, 3)
+            cours_a_assigner = random.sample(all_cours, min(nb_cours, len(all_cours)))
+            for cours in cours_a_assigner:
+                ProposalCoursEnseignant.objects.get_or_create(
+                    cours=cours,
+                    enseignant=enseignant,
+                    defaults={
+                        'message': f'Proposition automatique pour le cours {cours.libelle}',
+                        'est_accepte': True,
+                    }
+                )
+                # Retirer le cours de la liste pour ne pas le réassigner
+                if cours in all_cours:
+                    all_cours.remove(cours)
+
+        # Assigner des cours aux autres enseignants de manière plus aléatoire
+        for enseignant in enseignants[3:]:
+            nb_cours = random.randint(0, 2) # Certains peuvent ne pas avoir de cours
+            cours_a_assigner = []
+            cours_assignes = random.sample(all_cours, min(nb_cours, len(all_cours)))
             
             for cours in cours_assignes:
                 ProposalCoursEnseignant.objects.get_or_create(
@@ -529,11 +550,13 @@ class Command(BaseCommand):
                         'est_accepte': True,
                     }
                 )
+                if cours in all_cours:
+                    all_cours.remove(cours)
         
         # Ajouter quelques propositions en attente (non acceptées) pour certains enseignants
         for _ in range(3):
             enseignant = random.choice(enseignants)
-            cours = random.choice(cours_list)
+            cours = random.choice(all_cours)
             ProposalCoursEnseignant.objects.get_or_create(
                 cours=cours,
                 enseignant=enseignant,

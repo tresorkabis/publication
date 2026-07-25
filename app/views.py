@@ -321,7 +321,16 @@ def dashboard_enseignant(request):
     enseignant = request.user.personnel
     
     # Cours assignés à l'enseignant
-    cours_assignes = Cours.objects.filter(propositions_enseignants__enseignant=enseignant, propositions_enseignants__est_accepte=True).distinct().select_related('filiere', 'semestre', 'annee_etude')
+    cours_assignes = Cours.objects.filter(
+        propositions_enseignants__enseignant=enseignant, 
+        propositions_enseignants__est_accepte=True
+    ).distinct().select_related(
+        'filiere', 'semestre', 'annee_etude'
+    ).annotate(
+        nb_etudiants=Count('filiere__promotion__inscriptions__etudiant', distinct=True, filter=Q(
+            filiere__promotion__libelle__icontains=('annee_etude__code'))
+        )
+    )
     
     # Évaluations à venir pour les cours de l'enseignant
     evaluations_a_venir = Evaluation.objects.filter(
@@ -394,16 +403,17 @@ def evaluations_enseignant(request):
     evaluations_publiees_count = evaluations.filter(is_published=True).count()
     
     # Ajouter le nombre d'étudiants et statistiques de notes pour chaque évaluation
-    from django.db.models import Count, Avg
+    from django.db.models import Count, Avg, Subquery, OuterRef
+    
+    # Utiliser les annotations pour éviter les boucles et les requêtes N+1
+    evaluations = evaluations.annotate(
+        nb_etudiants=Count('cotations__etudiant', distinct=True),
+        nb_notes_saisies=Count('cotations__note'),
+        moyenne=Avg('cotations__note')
+    )
+    
+    # La conversion en liste est toujours utile si vous devez faire d'autres manipulations en Python
     evaluations_list = list(evaluations)
-    for eval in evaluations_list:
-        eval.nb_etudiants = Cotation.objects.filter(evaluation=eval).values('etudiant').distinct().count()
-        stats = Cotation.objects.filter(evaluation=eval).aggregate(
-            nb_notes=Count('id'),
-            moyenne=Avg('note')
-        )
-        eval.nb_notes_saisies = stats['nb_notes'] or 0
-        eval.moyenne = round(float(stats['moyenne']), 2) if stats['moyenne'] is not None else None
     
     context = {
         'evaluations': evaluations_list,
@@ -419,18 +429,11 @@ def evaluations_enseignant(request):
 
 @login_required
 def cours_enseignant(request):
-    # Vérifier si l'utilisateur est un enseignant
-    print(f"cours_enseignant: user={request.user.username}, has_personnel={hasattr(request.user, 'personnel')}")
-    
     if not hasattr(request.user, 'personnel'):
         messages.error(request, "Accès réservé au personnel.")
         return redirect('dashboard')
     
-    # Vérifier le rôle enseignant
-    role_labels = getattr(request.user, 'role_labels', [])
-    print(f"cours_enseignant: role_labels={role_labels}")
-    
-    if 'enseignant' not in role_labels:
+    if not request.user.has_role('enseignant'):
         messages.error(request, "Accès réservé aux enseignants.")
         return redirect('dashboard')
 
@@ -442,8 +445,6 @@ def cours_enseignant(request):
         propositions_enseignants__est_accepte=True
     ).distinct().select_related('filiere', 'semestre', 'annee_etude')
     
-    print(f"cours_enseignant: enseignant={enseignant.user.username}, cours_assignes count={cours_assignes.count()}")
-    
     # Pour chaque cours, récupérer les évaluations associées
     cours_avec_evaluations = []
     for cours in cours_assignes:
@@ -454,8 +455,6 @@ def cours_enseignant(request):
             'evaluations_count': evaluations.count(),
             'evaluations_publiees': evaluations.filter(is_published=True).count(),
         })
-    
-    print(f"cours_avec_evaluations count={len(cours_avec_evaluations)}")
     
     context = {
         'cours_avec_evaluations': cours_avec_evaluations,
@@ -541,13 +540,9 @@ def saisie_notes_enseignant(request, evaluation_id):
         notes_saved = 0
         erreurs = []
         
-        # DEBUG: Afficher toutes les données POST
-        print(f"DEBUG POST - Données reçues: {dict(request.POST)}")
-        
         for student in students:
             note_key = f'note_{student.pk}'
             note = request.POST.get(note_key)
-            print(f"DEBUG POST - Student {student.pk} ({student.user.get_full_name()}): note_key={note_key}, note_value={note}")
             
             if note is not None and note.strip() != '':
                 note = note.replace(',', '.').strip()
@@ -562,11 +557,8 @@ def saisie_notes_enseignant(request, evaluation_id):
                         defaults={'note': note_decimal}
                     )
                     notes_saved += 1
-                    print(f"DEBUG POST - Sauvegardé: etudiant={student.pk}, note={note_decimal}, created={created}")
                 except (InvalidOperation, ValueError):
                     erreurs.append(f"Format invalide pour {student.user.get_full_name()} : {note}")
-        
-        print(f"DEBUG POST - Total notes sauvegardées: {notes_saved}")
         
         # Ne pas rediriger, rester sur la page pour permettre la révision
         if notes_saved > 0:
@@ -577,6 +569,15 @@ def saisie_notes_enseignant(request, evaluation_id):
         if erreurs:
             for erreur in erreurs:
                 messages.error(request, erreur)
+    else:
+        # GET request: S'assurer que chaque étudiant a une cotation, même avec 0
+        # pour que le template puisse afficher une valeur par défaut.
+        for student in students:
+            Cotation.objects.get_or_create(
+                etudiant=student,
+                evaluation=evaluation,
+                defaults={'note': 0}
+            )
     
     # Récupérer les notes existantes - Utiliser etudiant_id directement
     cotations = Cotation.objects.filter(evaluation=evaluation)
@@ -584,16 +585,20 @@ def saisie_notes_enseignant(request, evaluation_id):
     for c in cotations:
         notes_map[c.etudiant_id] = c.note
     
-    # DEBUG: Afficher les notes chargées
-    print(f"DEBUG GET - Notes chargées depuis BD: {notes_map}")
-    print(f"DEBUG GET - Students count: {students.count()}")
-    
     # Préparer les données pour le template
     students_notes = []
     for student in students:
+        note = notes_map.get(student.pk)
+        status = None
+        if note is not None:
+            if note >= 10:
+                status = 'reussite'
+            else:
+                status = 'echec'
         students_notes.append({
             'student': student,
-            'note': notes_map.get(student.pk),
+            'note': note,
+            'status': status,
         })
     
     context = {

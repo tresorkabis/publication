@@ -271,7 +271,7 @@ class Evaluation(models.Model):
 class Cotation(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='cotations')
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='cotations')
-    note = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    note = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     class Meta:
         unique_together = ('etudiant', 'evaluation')
