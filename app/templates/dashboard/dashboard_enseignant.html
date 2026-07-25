@@ -364,7 +364,7 @@
 
     <!-- Statistiques -->
     <div class="stats-container">
-        <a href="{% url 'cours_list' %}" class="stat-card-link">
+        <a href="{% url 'cours_enseignant' %}" class="stat-card-link">
             <div class="stat-card">
                 <div class="stat-content">
                     <div class="stat-info">
@@ -378,7 +378,7 @@
             </div>
         </a>
 
-        <a href="{% url 'evaluation_list' %}" class="stat-card-link">
+        <a href="{% url 'evaluations_enseignant' %}?filtre=a_venir" class="stat-card-link">
             <div class="stat-card">
                 <div class="stat-content">
                     <div class="stat-info">
@@ -392,7 +392,7 @@
             </div>
         </a>
 
-        <a href="{% url 'evaluation_list' %}?published=true" class="stat-card-link">
+        <a href="{% url 'evaluations_enseignant' %}?filtre=publiees" class="stat-card-link">
             <div class="stat-card">
                 <div class="stat-content">
                     <div class="stat-info">
@@ -406,19 +406,17 @@
             </div>
         </a>
 
-        <a href="{% url 'proposer_cours' %}" class="stat-card-link">
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Propositions en attente</h3>
-                        <div class="value">{{ propositions_en_attente|length }}</div>
-                    </div>
-                    <div class="stat-icon pending">
-                        <i class="fas fa-hourglass-half"></i>
-                    </div>
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Propositions en attente</h3>
+                    <div class="value">{{ propositions_en_attente|length }}</div>
+                </div>
+                <div class="stat-icon pending">
+                    <i class="fas fa-hourglass-half"></i>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
 
     <!-- Mes Cours -->

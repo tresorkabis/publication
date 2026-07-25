@@ -89,7 +89,7 @@ if enseignants_avec_cours:
     output.write(f"Username: {user.username}\n")
     output.write(f"Nom complet: {user.get_full_name()}\n")
     output.write(f"Email: {user.email}\n")
-    output.write(f"Mot de passe par défaut: changeme123\n")
+    output.write(f"Mot de passe par défaut: demo\n")
     output.write(f"\nPour se connecter: http://localhost:8000/connexion/\n")
 
 output.close()
@@ -104,4 +104,4 @@ if enseignants_avec_cours:
     print(f"  Username: {user.username}")
     print(f"  Nom: {user.get_full_name()}")
     print(f"  Email: {user.email}")
-    print(f"  Mot de passe: changeme123")
+    print(f"  Mot de passe: demo")

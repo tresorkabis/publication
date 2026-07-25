@@ -506,20 +506,42 @@ class Command(BaseCommand):
 
     def create_propositions_cours(self):
         self.stdout.write("  📝 Création de propositions de cours...")
-        enseignants = Personnel.objects.filter(
+        enseignants = list(Personnel.objects.filter(
             user__utilisateur_roles__role__libelle='enseignant'
-        )
+        ))
         cours_list = list(Cours.objects.all())
         
-        for _ in range(5):
-            if cours_list and enseignants:
-                cours = random.choice(cours_list)
-                enseignant = random.choice(enseignants)
+        if not cours_list or not enseignants:
+            return
+        
+        # Assigner plusieurs cours à chaque enseignant
+        for i, enseignant in enumerate(enseignants):
+            # Chaque enseignant reçoit 2 à 4 cours
+            nb_cours = random.randint(2, 4)
+            cours_assignes = random.sample(cours_list, min(nb_cours, len(cours_list)))
+            
+            for cours in cours_assignes:
                 ProposalCoursEnseignant.objects.get_or_create(
                     cours=cours,
                     enseignant=enseignant,
                     defaults={
                         'message': f'Proposition pour le cours de {cours.libelle}',
-                        'est_accepte': random.choice([True, False]),
+                        'est_accepte': True,
                     }
                 )
+        
+        # Ajouter quelques propositions en attente (non acceptées) pour certains enseignants
+        for _ in range(3):
+            enseignant = random.choice(enseignants)
+            cours = random.choice(cours_list)
+            ProposalCoursEnseignant.objects.get_or_create(
+                cours=cours,
+                enseignant=enseignant,
+                defaults={
+                    'message': 'Proposition en attente de validation',
+                    'est_accepte': False,
+                }
+            )
+        
+        self.stdout.write(f"  ✅ {ProposalCoursEnseignant.objects.filter(est_accepte=True).count()} propositions acceptées créées")
+        self.stdout.write(f"  ⏳ {ProposalCoursEnseignant.objects.filter(est_accepte=False).count()} propositions en attente créées")

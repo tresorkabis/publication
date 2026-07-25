@@ -246,6 +246,14 @@
             Retour
         </a>
     </div>
+    
+    {% if students_notes %}
+    <div class="alert alert-success" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Information :</strong> Les notes existantes sont automatiquement chargées depuis la base de données. 
+        Vous pouvez quitter cette page et revenir à tout moment, vos notes seront conservées.
+    </div>
+    {% endif %}
 
     <div class="evaluation-info">
         <h3>{{ evaluation.cours.libelle }}</h3>
@@ -262,12 +270,17 @@
                 <i class="fas fa-calendar"></i>
                 <span>{{ evaluation.date|date:'d/m/Y' }}</span>
             </div>
-            <div class="evaluation-detail-item">
-                <i class="fas fa-building-columns"></i>
-                <span>{{ evaluation.cours.filiere.libelle }}</span>
+                <div class="evaluation-detail-item">
+                    <i class="fas fa-building-columns"></i>
+                    <span>{{ evaluation.cours.filiere.libelle }}</span>
+                </div>
             </div>
         </div>
-    </div>
+
+        <div class="alert alert-info mt-3 mb-0" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note :</strong> Les notes existantes apparaissent avec un fond vert. Vous pouvez les modifier directement dans les champs. Cliquez sur "Enregistrer les notes" pour sauvegarder vos modifications.
+        </div>
 
     <div class="notes-form">
         <form method="post" action="{% url 'saisie_notes_enseignant' evaluation_id=evaluation.pk %}">
@@ -300,8 +313,8 @@
                                 <input 
                                     type="number" 
                                     name="note_{{ item.student.pk }}" 
-                                    class="note-input {% if item.note %}has-value{% endif %}"
-                                    value="{{ item.note|default:'' }}"
+                                    class="note-input {% if item.note is not None %}has-value{% endif %}"
+                                    value="{{ item.note|default_if_none:'' }}"
                                     min="0" 
                                     max="20" 
                                     step="0.25"

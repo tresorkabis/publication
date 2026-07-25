@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #c7d2fe;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+    }
+
+    .evaluations-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .page-title i {
+        color: var(--primary);
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: white;
+        color: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: var(--light);
+        border-color: var(--primary);
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0;
+    }
+
+    .filter-tab {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: none;
+        color: #6b7280;
+        font-weight: 500;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-tab:hover {
+        color: var(--dark);
+    }
+
+    .filter-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+
+    .evaluations-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .evaluation-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+    }
+
+    .evaluation-card:hover {
+        border-color: var(--primary-light);
+    }
+
+    .evaluation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .evaluation-cours {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .evaluation-cours small {
+        font-weight: 400;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .evaluation-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .evaluation-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .evaluation-detail i {
+        width: 20px;
+        color: var(--primary);
+    }
+
+    .evaluation-detail strong {
+        color: var(--dark);
+    }
+
+    .evaluation-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-saisir {
+        background: var(--warning);
+        color: white;
+    }
+
+    .btn-saisir:hover {
+        background: #d97706;
+        color: white;
+    }
+
+    .btn-voir {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-voir:hover {
+        background: #4338ca;
+        color: white;
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #059669;
+        color: white;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 9999px;
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .badge-secondary {
+        background: rgba(156, 163, 175, 0.1);
+        color: #6b7280;
+    }
+
+    .badge-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6b7280;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #d1d5db;
+    }
+
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-box {
+        background: white;
+        border-radius: 10px;
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .stat-box-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    .stat-box-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .evaluation-details {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="evaluations-page">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-tasks"></i>
+            Gestion des Évaluations
+        </h1>
+        <a href="{% url 'dashboard_enseignant' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Retour au tableau de bord
+        </a>
+    </div>
+
+    <!-- Résumé des statistiques -->
+    <div class="stats-summary">
+        <div class="stat-box">
+            <div class="stat-box-value">{{ total_evaluations }}</div>
+            <div class="stat-box-label">Total évaluations</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-value">{{ evaluations_a_venir_count }}</div>
+            <div class="stat-box-label">À venir (non publiées)</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-value">{{ evaluations_publiees_count }}</div>
+            <div class="stat-box-label">Publiées</div>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filter-tabs">
+        <a href="{% url 'evaluations_enseignant' %}" class="filter-tab {% if filtre == 'toutes' %}active{% endif %}">
+            <i class="fas fa-list"></i> Toutes
+        </a>
+        <a href="{% url 'evaluations_enseignant' %}?filtre=a_venir" class="filter-tab {% if filtre == 'a_venir' %}active{% endif %}">
+            <i class="fas fa-clock"></i> À venir
+        </a>
+        <a href="{% url 'evaluations_enseignant' %}?filtre=publiees" class="filter-tab {% if filtre == 'publiees' %}active{% endif %}">
+            <i class="fas fa-check-circle"></i> Publiées
+        </a>
+    </div>
+
+    <!-- Liste des évaluations -->
+    {% if evaluations %}
+    <div class="evaluations-list">
+        {% for eval in evaluations %}
+        <div class="evaluation-card">
+            <div class="evaluation-header">
+                <div>
+                    <h3 class="evaluation-cours">
+                        {{ eval.cours.libelle }}
+                        <small>· {{ eval.cours.code }}</small>
+                    </h3>
+                </div>
+                <div>
+                    {% if eval.is_published %}
+                    <span class="badge badge-success"><i class="fas fa-check-circle me-1"></i>Publiée</span>
+                    {% else %}
+                    <span class="badge badge-warning"><i class="fas fa-hourglass-half me-1"></i>Non publiée</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="evaluation-details">
+                <div class="evaluation-detail">
+                    <i class="fas fa-tag"></i>
+                    <span>Type : <strong>{{ eval.type_evaluation.libelle }}</strong></span>
+                </div>
+                <div class="evaluation-detail">
+                    <i class="fas fa-calendar"></i>
+                    <span>Date : <strong>{{ eval.date|date:'d/m/Y' }}</strong></span>
+                </div>
+                <div class="evaluation-detail">
+                    <i class="fas fa-clock"></i>
+                    <span>Durée : <strong>{{ eval.duree_minutes }} min</strong></span>
+                </div>
+                <div class="evaluation-detail">
+                    <i class="fas fa-building-columns"></i>
+                    <span>Filière : <strong>{{ eval.cours.filiere.libelle }}</strong></span>
+                </div>
+                <div class="evaluation-detail">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Semestre : <strong>{{ eval.cours.semestre.libelle }}</strong></span>
+                </div>
+                {% if eval.cours.annee_etude %}
+                <div class="evaluation-detail">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Année : <strong>{{ eval.cours.annee_etude.libelle }}</strong></span>
+                </div>
+                {% endif %}
+                <div class="evaluation-detail">
+                    <i class="fas fa-users"></i>
+                    <span>Étudiants : <strong>{{ eval.nb_etudiants }}</strong></span>
+                </div>
+                {% if eval.nb_notes_saisies %}
+                <div class="evaluation-detail">
+                    <i class="fas fa-check-double"></i>
+                    <span>Notes saisies : <strong>{{ eval.nb_notes_saisies }}</strong></span>
+                </div>
+                {% endif %}
+                {% if eval.moyenne is not None %}
+                <div class="evaluation-detail">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Moyenne : <strong>{{ eval.moyenne }}/20</strong></span>
+                </div>
+                {% endif %}
+                <div class="evaluation-detail">
+                    <i class="fas fa-star"></i>
+                    <span>Coefficient : <strong>{{ eval.coefficient }}</strong></span>
+                </div>
+            </div>
+
+            <div class="evaluation-actions">
+                {% if not eval.is_published %}
+                <a href="{% url 'saisie_notes_enseignant' evaluation_id=eval.pk %}" class="btn-action btn-saisir">
+                    <i class="fas fa-edit"></i>
+                    Saisir / Modifier les notes
+                </a>
+                {% else %}
+                <a href="{% url 'saisie_notes_enseignant' evaluation_id=eval.pk %}" class="btn-action btn-voir">
+                    <i class="fas fa-eye"></i>
+                    Voir les notes des étudiants
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-tasks"></i>
+        <h3>Aucune évaluation</h3>
+        <p>
+            {% if filtre == 'a_venir' %}
+                Vous n'avez aucune évaluation à venir pour le moment.
+            {% elif filtre == 'publiees' %}
+                Aucune évaluation n'a encore été publiée pour vos cours.
+            {% else %}
+                Aucune évaluation trouvée pour vos cours assignés.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
