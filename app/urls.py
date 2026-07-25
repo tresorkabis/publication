@@ -1,6 +1,8 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from . import views_enseignant
+from . import views_demo
 
 urlpatterns = [
     path('', views.dashboard, name='home'),
@@ -29,6 +31,11 @@ urlpatterns = [
     path('resultats/proposer-cours/', views.proposer_cours, name='proposer_cours'),
     path('validations/', views.pending_validations, name='pending_validations'),
     path('validations/valider/<int:user_id>/', views.validate_user, name='validate_user'),
+    
+    # Validations des notes par le président
+    path('president/validations-notes/', views.liste_evaluations_a_valider, name='liste_evaluations_a_valider'),
+    path('president/validations-notes/<int:evaluation_id>/', views.valider_evaluation, name='valider_evaluation'),
+    path('president/historique-validations/', views.historique_validations, name='historique_validations'),
 
     path('filieres/', views.FiliereListView.as_view(), name='filiere_list'),
     path('filieres/ajouter/', views.FiliereCreateView.as_view(), name='filiere_create'),
@@ -67,6 +74,7 @@ urlpatterns = [
     path('admin/personnels/ajouter/', views.PersonnelCreateView.as_view(), name='personnel_create'),
     path('admin/personnels/<int:pk>/modifier/', views.PersonnelUpdateView.as_view(), name='personnel_update'),
     path('admin/personnels/<int:pk>/supprimer/', views.PersonnelDeleteView.as_view(), name='personnel_delete'),
+    path('admin/personnels/<int:personnel_id>/compte/', views_enseignant.compte_enseignant, name='compte_enseignant'),
 
     # Gestion des étudiants (admin)
     path('admin/etudiants/', views.EtudiantListView.as_view(), name='etudiant_list'),
@@ -86,4 +94,7 @@ urlpatterns = [
     path('admin/fonctions/ajouter/', views.FonctionCreateView.as_view(), name='fonction_create'),
     path('admin/fonctions/<int:pk>/modifier/', views.FonctionUpdateView.as_view(), name='fonction_update'),
     path('admin/fonctions/<int:pk>/supprimer/', views.FonctionDeleteView.as_view(), name='fonction_delete'),
+    
+    # Comptes de démonstration
+    path('admin/comptes-demo/', views_demo.comptes_demo, name='comptes_demo'),
 ]

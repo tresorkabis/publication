@@ -314,3 +314,19 @@ class ProposalCoursEnseignant(models.Model):
 
     def __str__(self):
         return f"{self.cours.libelle} -> {self.enseignant.user.get_full_name()}"
+
+class ValidationNotes(models.Model):
+    """Traçabilité des validations de notes par le président"""
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='validations')
+    validateur = models.ForeignKey(Personnel, on_delete=models.CASCADE, related_name='validations_notes')
+    date_validation = models.DateTimeField(auto_now_add=True)
+    commentaire = models.TextField(blank=True, null=True)
+    est_valide = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-date_validation']
+        verbose_name = "Validation de notes"
+        verbose_name_plural = "Validations de notes"
+
+    def __str__(self):
+        return f"Validation {self.evaluation} par {self.validateur.user.get_full_name()} - {'Validé' if self.est_valide else 'Rejeté'}"

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Avg, Max, Min
 from .models import *
 from .forms import UserRegistrationForm, UserProfileForm, PlanificationExamenForm, PropositionCoursForm
 from django.contrib.auth import login, authenticate
@@ -899,6 +899,128 @@ def valider_moyenne_etudiant(request, etudiant_id):
         return redirect('dashboard')
 
     return redirect('dashboard')
+
+@login_required
+def liste_evaluations_a_valider(request):
+    """Liste des évaluations avec notes saisies mais non publiées"""
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('president')):
+        messages.error(request, "Accès réservé au président.")
+        return redirect('dashboard')
+
+    # Évaluations avec des notes mais non publiées
+    evaluations = Evaluation.objects.filter(
+        is_published=False
+    ).filter(
+        cotations__isnull=False
+    ).distinct().select_related(
+        'cours', 'cours__filiere', 'type_evaluation', 'calendrier'
+    ).order_by('-date', 'cours__filiere__libelle')
+
+    # Ajouter des statistiques pour chaque évaluation
+    evaluations_avec_stats = []
+    for evaluation in evaluations:
+        cotations = Cotation.objects.filter(evaluation=evaluation)
+        nb_notes = cotations.count()
+        moyenne = cotations.aggregate(moyenne=Avg('note'))['moyenne']
+        note_max = cotations.aggregate(max_note=Max('note'))['max_note']
+        note_min = cotations.aggregate(min_note=Min('note'))['min_note']
+        
+        evaluations_avec_stats.append({
+            'evaluation': evaluation,
+            'nb_notes': nb_notes,
+            'moyenne': round(moyenne, 2) if moyenne else None,
+            'note_max': round(note_max, 2) if note_max else None,
+            'note_min': round(note_min, 2) if note_min else None,
+        })
+
+    context = {
+        'evaluations_avec_stats': evaluations_avec_stats,
+        'total_en_attente': len(evaluations_avec_stats),
+    }
+    return render(request, 'dashboard/validations_notes_president.html', context)
+
+@login_required
+def valider_evaluation(request, evaluation_id):
+    """Valider ou rejeter une évaluation"""
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('president')):
+        messages.error(request, "Accès réservé au président.")
+        return redirect('dashboard')
+
+    evaluation = get_object_or_404(Evaluation, pk=evaluation_id)
+    president = request.user.personnel
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        commentaire = request.POST.get('commentaire', '')
+
+        if action == 'valider':
+            # Créer l'enregistrement de validation
+            ValidationNotes.objects.create(
+                evaluation=evaluation,
+                validateur=president,
+                commentaire=commentaire,
+                est_valide=True
+            )
+            
+            # Publier l'évaluation
+            evaluation.is_published = True
+            evaluation.published_at = timezone.now()
+            evaluation.save()
+            
+            messages.success(request, f"L'évaluation de {evaluation.cours.libelle} a été validée et publiée.")
+        elif action == 'rejeter':
+            # Créer l'enregistrement de rejet
+            ValidationNotes.objects.create(
+                evaluation=evaluation,
+                validateur=president,
+                commentaire=commentaire,
+                est_valide=False
+            )
+            
+            # Supprimer les notes pour permettre une nouvelle saisie
+            Cotation.objects.filter(evaluation=evaluation).delete()
+            
+            messages.warning(request, f"L'évaluation de {evaluation.cours.libelle} a été rejetée. Les notes ont été supprimées.")
+
+        return redirect('liste_evaluations_a_valider')
+
+    # GET: afficher le détail de l'évaluation
+    cotations = Cotation.objects.filter(evaluation=evaluation).select_related(
+        'etudiant', 'etudiant__user'
+    ).order_by('etudiant__user__nom', 'etudiant__user__postnom')
+
+    context = {
+        'evaluation': evaluation,
+        'cotations': cotations,
+        'nb_notes': cotations.count(),
+    }
+    return render(request, 'dashboard/valider_evaluation.html', context)
+
+@login_required
+def historique_validations(request):
+    """Historique des validations effectuées par le président"""
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('president')):
+        messages.error(request, "Accès réservé au président.")
+        return redirect('dashboard')
+
+    validations = ValidationNotes.objects.filter(
+        validateur=request.user.personnel
+    ).select_related(
+        'evaluation', 'evaluation__cours', 'evaluation__cours__filiere'
+    ).order_by('-date_validation')
+
+    # Calculer les statistiques
+    total_validations = validations.count()
+    validations_validees = validations.filter(est_valide=True).count()
+    validations_rejetees = validations.filter(est_valide=False).count()
+
+    context = {
+        'validations': validations,
+        'total_validations': total_validations,
+        'validations_validees': validations_validees,
+        'validations_rejetees': validations_rejetees,
+    }
+    return render(request, 'dashboard/historique_validations.html', context)
 
 @login_required
 def publier_horaires_examens(request):

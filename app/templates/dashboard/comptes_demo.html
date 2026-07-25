@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .comptes-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .comptes-header {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid #e5e7eb;
+        margin-bottom: 2rem;
+    }
+
+    .comptes-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .comptes-header p {
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+
+    .stat-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-card-icon.total { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
+    .stat-card-icon.etudiants { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-card-icon.enseignants { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .stat-card-icon.presidents { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .stat-card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .stat-card-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+
+    .comptes-table {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid #e5e7eb;
+    }
+
+    .table-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .table-title i {
+        color: #4f46e5;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: #f9fafb;
+        color: #6b7280;
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .data-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        color: #1f2937;
+    }
+
+    .data-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-table tr:hover {
+        background: rgba(79, 70, 229, 0.03);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 9999px;
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .badge-secondary {
+        background: rgba(156, 163, 175, 0.1);
+        color: #6b7280;
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .badge-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .badge-info {
+        background: rgba(79, 70, 229, 0.1);
+        color: #4f46e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #c7d2fe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .user-username {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6b7280;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+        .comptes-container {
+            padding: 1rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .data-table {
+            font-size: 0.875rem;
+        }
+    }
+</style>
+
+<div class="comptes-container">
+    <div class="comptes-header">
+        <h1>
+            <i class="fas fa-users" style="color: #4f46e5;"></i>
+            Comptes de démonstration
+        </h1>
+        <p>Liste de tous les comptes utilisateurs de démonstration dans le système</p>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon total">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-card-value">{{ total_utilisateurs }}</div>
+            <div class="stat-card-label">Total utilisateurs</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon etudiants">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="stat-card-value">{{ total_etudiants }}</div>
+            <div class="stat-card-label">Étudiants</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon enseignants">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="stat-card-value">{{ total_enseignants }}</div>
+            <div class="stat-card-label">Enseignants</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon presidents">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="stat-card-value">{{ total_presidents }}</div>
+            <div class="stat-card-label">Présidents</div>
+        </div>
+    </div>
+
+    <!-- Tableau des comptes -->
+    <div class="comptes-table">
+        <div class="table-title">
+            <i class="fas fa-list"></i>
+            Liste des comptes
+        </div>
+        
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Type</th>
+                        <th>Rôles</th>
+                        <th>Matricule</th>
+                        <th>Email</th>
+                        <th>Filière/Promotion</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for compte in comptes %}
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    {{ compte.user.nom|first|upper }}
+                                </div>
+                                <div class="user-details">
+                                    <span class="user-name">{{ compte.user.get_full_name }}</span>
+                                    <span class="user-username">@{{ compte.user.username }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">{{ compte.type_compte }}</span>
+                        </td>
+                        <td>
+                            {% for role in compte.roles %}
+                            <span class="badge badge-secondary">{{ role }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ compte.matricule }}</td>
+                        <td>{{ compte.email }}</td>
+                        <td>
+                            {% if compte.filiere != '-' %}
+                            <div>{{ compte.filiere }}</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">{{ compte.promotion }}</div>
+                            {% else %}
+                            <span style="color: #6b7280;">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if compte.is_active %}
+                                {% if compte.is_validated %}
+                                <span class="badge badge-success">Actif</span>
+                                {% else %}
+                                <span class="badge badge-warning">Non validé</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="badge badge-danger">Inactif</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <div>
+                                <i class="fas fa-inbox"></i>
+                                <p>Aucun compte utilisateur trouvé.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
