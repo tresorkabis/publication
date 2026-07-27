@@ -1043,6 +1043,9 @@ def detail_promotion_notes(request, promotion_id):
         if cours_id not in cours_avec_evaluations:
             continue
             
+        if etudiant_id not in notes_par_etudiant:
+            notes_par_etudiant[etudiant_id] = {}
+            
         if cours_id not in notes_par_etudiant[etudiant_id]:
             notes_par_etudiant[etudiant_id][cours_id] = {
                 'tp': None,
@@ -1071,7 +1074,8 @@ def detail_promotion_notes(request, promotion_id):
     # Construire les lignes du tableau avec les notes directement accessibles par index
     cours_a_afficher = [c for c in cours_list if c.id in cours_avec_evaluations]
     cours_ids = [c.id for c in cours_a_afficher]
-    
+    code_par_cours_id = {c.id: c.code for c in cours_a_afficher}
+
     lignes_tableau = []
     for etudiant in etudiants:
         notes_par_cours = []
@@ -1079,7 +1083,7 @@ def detail_promotion_notes(request, promotion_id):
             notes = notes_par_etudiant.get(etudiant.id, {}).get(cours_id, None)
             notes_par_cours.append({
                 'cours_id': cours_id,
-                'cours_code': next(c.code for c in cours_a_afficher if c.id == cours_id),
+                'cours_code': code_par_cours_id.get(cours_id, ''),
                 'notes': notes,
             })
         lignes_tableau.append({
