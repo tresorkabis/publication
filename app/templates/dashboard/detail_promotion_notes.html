@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notes - {{ promotion.libelle }} ({{ promotion.filiere.libelle }}){% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'liste_evaluations_a_valider' %}" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="fas fa-arrow-left"></i> Retour aux filières
+            </a>
+            <h1>
+                <i class="fas fa-graduation-cap" style="color: #4f46e5;"></i>
+                {{ promotion.libelle }} - {{ promotion.filiere.libelle }}
+            </h1>
+            <p class="text-muted mb-0">
+                <i class="fas fa-users me-1"></i>{{ total_etudiants }} étudiant(s) | 
+                <i class="fas fa-book ms-2 me-1"></i>{{ total_cours }} cours
+            </p>
+        </div>
+        <a href="{% url 'historique_validations' %}" class="btn btn-info">
+            <i class="fas fa-history"></i> Historique
+        </a>
+    </div>
+
+    {% if cours_list and etudiants %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
+            <h5 class="mb-0">
+                <i class="fas fa-table me-2"></i>Notes en attente de validation
+            </h5>
+            <span class="badge bg-warning text-dark">
+                <i class="fas fa-clock me-1"></i>Non publiées
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-bordered table-hover mb-0" style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th class="text-center align-middle" style="width: 50px; background-color: #f0f4ff; position: sticky; left: 0; z-index: 2;">N°</th>
+                            <th class="align-middle" style="min-width: 200px; background-color: #f0f4ff; position: sticky; left: 50px; z-index: 2;">Étudiant</th>
+                            {% for cours in cours_list %}
+                            <th class="text-center align-middle" style="min-width: 120px; background-color: #f0f4ff;">
+                                <div class="small fw-bold">{{ cours.libelle }}</div>
+                                <div class="small text-muted" style="font-size: 0.7rem;">{{ cours.code }}</div>
+                                <div class="small text-muted" style="font-size: 0.65rem;">S{{ cours.semestre.libelle|cut:"Semestre " }}</div>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ligne in lignes_tableau %}
+                    {% with etudiant=ligne.etudiant notes_par_cours=ligne.notes_par_cours %}
+                        <tr>
+                            <td class="text-center align-middle fw-bold" style="background-color: #f8fafc; position: sticky; left: 0; z-index: 1;">{{ forloop.counter }}</td>
+                            <td class="align-middle" style="background-color: #f8fafc; position: sticky; left: 50px; z-index: 1;">
+                                <div class="fw-bold">{{ etudiant.user.nom }} {{ etudiant.user.postnom }}</div>
+                                <div class="small text-muted">{{ etudiant.user.prenom|default:"" }}</div>
+                                <div class="small text-muted">Mat: {{ etudiant.matricule|default:"N/A" }}</div>
+                            </td>
+                            {% for item in notes_par_cours %}
+                            <td class="text-center align-middle">
+                                {% with notes=item.notes %}
+                                    {% if notes %}
+                                        <div class="d-flex flex-column align-items-center gap-1">
+                                            {% if notes.tp is not None %}
+                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; width: 85px;">
+                                                TP: {{ notes.tp }}/20
+                                            </span>
+                                            {% endif %}
+                                            {% if notes.interro is not None %}
+                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem; width: 85px;">
+                                                Int: {{ notes.interro }}/20
+                                            </span>
+                                            {% endif %}
+                                            {% if notes.examen is not None %}
+                                            <span class="badge bg-danger" style="font-size: 0.7rem; width: 85px;">
+                                                Ex: {{ notes.examen }}/20
+                                            </span>
+                                            {% endif %}
+                                            {% if notes.moyenne is not None %}
+                                            <span class="fw-bold mt-1 {% if notes.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}" style="font-size: 0.85rem;">
+                                                {{ notes.moyenne }}/20
+                                            </span>
+                                            {% else %}
+                                            <span class="text-muted small">-</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        <strong>Aucune note en attente de validation pour cette promotion.</strong>
+        Toutes les notes ont déjà été validées.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

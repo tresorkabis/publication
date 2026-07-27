@@ -22,63 +22,53 @@
         </div>
     </div>
 
-    <!-- Liste des évaluations à valider -->
-    {% if evaluations_avec_stats %}
-    <div class="card">
-        <div class="card-header">
-            <h5>Évaluations en attente de validation</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Cours</th>
-                            <th>Filière</th>
-                            <th>Type</th>
-                            <th>Nb. Notes</th>
-                            <th>Moyenne</th>
-                            <th>Min</th>
-                            <th>Max</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in evaluations_avec_stats %}
-                        <tr>
-                            <td>{{ item.evaluation.date|date:"d/m/Y" }}</td>
-                            <td>
-                                <strong>{{ item.evaluation.cours.libelle }}</strong><br>
-                                <small class="text-muted">{{ item.evaluation.cours.code }}</small>
-                            </td>
-                            <td>{{ item.evaluation.cours.filiere.libelle }}</td>
-                            <td>{{ item.evaluation.type_evaluation.libelle }}</td>
-                            <td>
-                                <span class="badge badge-primary">{{ item.nb_notes }}</span>
-                            </td>
-                            <td>
-                                {% if item.moyenne %}
-                                <strong>{{ item.moyenne }}</strong>/20
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ item.note_min|default:"-" }}</td>
-                            <td>{{ item.note_max|default:"-" }}</td>
-                            <td>
-                                <a href="{% url 'valider_evaluation' item.evaluation.id %}" 
-                                   class="btn btn-sm btn-primary">
-                                    <i class="fas fa-check-circle"></i> Valider
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Filières et leurs promotions -->
+    {% if filieres_data %}
+        {% for filiere_data in filieres_data %}
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center" style="background-color: #f0f4ff;">
+                <i class="fas fa-building-columns me-2" style="color: #4f46e5;"></i>
+                <h4 class="mb-0" style="color: #1f2937;">{{ filiere_data.filiere.libelle }}</h4>
+                <span class="badge bg-primary ms-3">{{ filiere_data.filiere.code }}</span>
+            </div>
+            <div class="card-body">
+                {% if filiere_data.promotions %}
+                <div class="row">
+                    {% for promotion in filiere_data.promotions %}
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'detail_promotion_notes' promotion.id %}" class="text-decoration-none">
+                            <div class="card h-100 border-primary hover-shadow" style="transition: all 0.2s;">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-graduation-cap fa-2x mb-2" style="color: #4f46e5;"></i>
+                                    <h5 class="card-title text-dark">{{ promotion.libelle }}</h5>
+                                    <div class="d-flex justify-content-center gap-2 mt-2">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-clipboard-list me-1"></i>{{ promotion.nb_evaluations_attente }} éval.
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-users me-1"></i>{{ promotion.nb_etudiants }} ét.
+                                        </span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-arrow-right me-1"></i>Voir les notes
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-success mb-0">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Aucune évaluation en attente pour cette filière.</strong>
+                </div>
+                {% endif %}
             </div>
         </div>
-    </div>
+        {% endfor %}
     {% else %}
     <div class="alert alert-success">
         <i class="fas fa-check-circle"></i>
@@ -87,17 +77,4 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    // Confirmation avant validation
-    $('.btn-validate').on('click', function(e) {
-        if (!confirm('Êtes-vous sûr de vouloir valider et publier cette évaluation ?')) {
-            e.preventDefault();
-        }
-    });
-});
-</script>
 {% endblock %}
