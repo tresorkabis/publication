@@ -443,32 +443,50 @@ class Command(BaseCommand):
             TypeEvaluation.objects.get_or_create(libelle=t)
 
     def create_evaluations(self):
-        self.stdout.write("  📊 Création des évaluations et notes...")
+        self.stdout.write("  📊 Création des évaluations et notes (avec états mixtes : publiées / non publiées)...")
         type_evals = list(TypeEvaluation.objects.all())
         
         for cours in Cours.objects.all():
             # 3 évaluations par cours
             for i in range(3):
                 type_eval = type_evals[i % len(type_evals)]
+                
+                # Déterminer si cette évaluation est publiée ou non (50% de chance)
+                is_published = random.choice([True, False])
+                # Si publiée, définir une date de publication dans le passé
+                published_at = None
+                if is_published:
+                    published_at = timezone.now() - timezone.timedelta(days=random.randint(1, 30))
+                
                 eval_instance, _ = Evaluation.objects.get_or_create(
                     type_evaluation=type_eval,
                     cours=cours,
                     date=f'2024-{random.randint(1, 12)}-{random.randint(1, 28)}',
-                    defaults={}
+                    defaults={
+                        'is_published': is_published,
+                        'published_at': published_at,
+                    }
                 )
                 
-                # Correction : Noter uniquement les étudiants inscrits à la bonne année d'étude pour ce cours.
-                # Cela évite de donner des notes à des étudiants de L3 pour un cours de L1,
-                # et surtout, cela empêche de créer des notes (et donc des profils étudiants) pour le personnel.
                 if not cours.annee_etude:
                     continue
 
-                inscriptions = Inscription.objects.filter(
-                    promotion__filiere=cours.filiere, # Même filière
-                    promotion__libelle__icontains=cours.annee_etude.code, # Même année d'étude (ex: "L1")
-                    etudiant__user__personnel__isnull=True # S'assurer que c'est bien un étudiant
-                )
-                for inscription in inscriptions:
+                inscriptions = list(Inscription.objects.filter(
+                    promotion__filiere=cours.filiere,
+                    promotion__libelle__icontains=cours.annee_etude.code,
+                    etudiant__user__personnel__isnull=True
+                ))
+                
+                # Pour les évaluations non publiées : ne créer des notes que pour 60-80% des étudiants
+                # Pour les évaluations publiées : créer des notes pour tous les étudiants
+                if is_published:
+                    etudiants_a_noter = inscriptions
+                else:
+                    # Mélange : certains étudiants ont des notes, d'autres non
+                    nb_etudiants = max(1, int(len(inscriptions) * random.uniform(0.6, 0.8)))
+                    etudiants_a_noter = random.sample(inscriptions, min(nb_etudiants, len(inscriptions)))
+                
+                for inscription in etudiants_a_noter:
                     note = round(random.uniform(5, 18), 2)
                     Cotation.objects.get_or_create(
                         etudiant=inscription.etudiant,
