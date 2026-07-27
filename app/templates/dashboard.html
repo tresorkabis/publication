@@ -640,130 +640,308 @@
         </div>
     </div>
     {% elif is_president %}
+    <!-- Section : Statistiques générales -->
+    <div class="stats-container" style="margin-bottom: 1.5rem;">
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Filières</h3>
+                    <div class="value">{{ total_filieres }}</div>
+                </div>
+                <div class="stat-icon filieres">
+                    <i class="fas fa-building-columns"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Cours</h3>
+                    <div class="value">{{ total_cours }}</div>
+                </div>
+                <div class="stat-icon users">
+                    <i class="fas fa-book-open"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Étudiants</h3>
+                    <div class="value">{{ total_etudiants }}</div>
+                </div>
+                <div class="stat-icon students">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Enseignants</h3>
+                    <div class="value">{{ total_enseignants }}</div>
+                </div>
+                <div class="stat-icon staff">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section : Performances académiques -->
+    <div class="stats-container" style="margin-bottom: 1.5rem;">
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Évaluations totales</h3>
+                    <div class="value">{{ total_evaluations }}</div>
+                </div>
+                <div class="stat-icon staff">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Publiées / Validées</h3>
+                    <div class="value" style="color: var(--success);">{{ total_publiees }}</div>
+                </div>
+                <div class="stat-icon students">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>En attente de validation</h3>
+                    <div class="value" style="color: var(--warning);">{{ pending_evaluations_count }}</div>
+                </div>
+                <div class="stat-icon filieres">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-2024">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h3>Étudiants avec notes</h3>
+                    <div class="value">{{ total_etudiants_notes }}</div>
+                    <div style="font-size: 0.75rem; color: #6b7280;">
+                        {{ etudiants_valides }} validés (≥ 10)
+                    </div>
+                </div>
+                <div class="stat-icon users">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section : Actions rapides -->
     <div class="chart-section" style="margin-bottom: 2rem;">
         <div class="chart-header">
             <div class="chart-title">
-                <i class="fas fa-building-columns"></i>
-                Filières
+                <i class="fas fa-bolt"></i>
+                Actions rapides
             </div>
         </div>
-        <div class="stats-container">
-            <a href="{% url 'comptes_demo' %}" class="stat-card-link">
-                <div class="stat-card-2024">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h3>Comptes Demo</h3>
-                            <div class="value">{{ total_filieres }}</div>
-                        </div>
-                        <div class="stat-icon users">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="action-buttons">
+            <a href="{% url 'liste_evaluations_a_valider' %}" class="btn-action btn-primary">
+                <i class="fas fa-clipboard-check"></i>
+                Valider des notes
+                {% if pending_evaluations_count %}
+                <span class="badge-2024" style="background: white; color: var(--primary); margin-left: 0.25rem;">{{ pending_evaluations_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'historique_validations' %}" class="btn-action btn-outline">
+                <i class="fas fa-history"></i>
+                Historique des validations
+            </a>
+            <a href="{% url 'comptes_demo' %}" class="btn-action btn-outline">
+                <i class="fas fa-users"></i>
+                Comptes de démonstration
             </a>
         </div>
-        <div class="stats-container">
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Total Filieres</h3>
-                        <div class="value">{{ total_filieres }}</div>
-                    </div>
-                    <div class="stat-icon filieres">
-                        <i class="fas fa-building-columns"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Total Cours</h3>
-                        <div class="value">{{ total_cours }}</div>
-                    </div>
-                    <div class="stat-icon users">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card-2024">
-                <div class="stat-content">
-                    <div class="stat-info">
-                        <h3>Total Enseignants</h3>
-                        <div class="value">{{ total_enseignants }}</div>
-                    </div>
-                    <div class="stat-icon staff">
-                        <i class="fas fa-chalkboard-teacher"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {% if total_filieres_list %}
-        <div style="margin-top: 1.5rem;">
-            <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 0.75rem;">Liste des filières</h3>
-            <div class="stats-container" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
-                {% for filiere in total_filieres_list %}
-                <div class="stat-card-2024" style="cursor: pointer;">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h3>{{ filiere.libelle }}</h3>
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                                Code: {{ filiere.code }}
-                            </div>
-                            {% if filiere.cours_count %}
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                                {{ filiere.cours_count }} cours
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="stat-icon filieres">
-                            <i class="fas fa-building-columns"></i>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 
+    <!-- Section : Évaluations en attente -->
+    {% if evaluations_avec_stats %}
+    <div class="chart-section" style="margin-bottom: 2rem;">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-clock"></i>
+                Évaluations en attente de validation
+            </div>
+            <a href="{% url 'liste_evaluations_a_valider' %}" style="color: var(--primary); font-size: 0.875rem; font-weight: 500; text-decoration: none;">
+                Voir tout <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="modern-table-2024">
+                <thead>
+                    <tr>
+                        <th>Cours</th>
+                        <th>Filière</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Notes</th>
+                        <th>Moy.</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in evaluations_avec_stats %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.evaluation.cours.libelle }}</strong>
+                            <br><small class="text-muted">{{ item.evaluation.cours.code }}</small>
+                        </td>
+                        <td>{{ item.evaluation.cours.filiere.libelle }}</td>
+                        <td>{{ item.evaluation.type_evaluation.libelle }}</td>
+                        <td>{{ item.evaluation.date|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge-2024 badge-success-2024">{{ item.nb_notes }}</span>
+                        </td>
+                        <td>
+                            {% if item.moyenne %}
+                            <strong>{{ item.moyenne }}</strong>/20
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'valider_evaluation' item.evaluation.id %}" class="btn-action btn-primary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+                                <i class="fas fa-check-circle"></i> Valider
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Section : 2 colonnes : Dernières publications + Filières -->
+    <div class="tables-container" style="margin-bottom: 2rem;">
+        <div class="table-card-2024">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    Dernières publications
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table-2024">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Filière</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in recent_publiees %}
+                        <tr>
+                            <td>{{ eval.cours.libelle }}</td>
+                            <td>{{ eval.cours.filiere.libelle }}</td>
+                            <td>{{ eval.published_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="empty-state">Aucune publication récente</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="table-card-2024">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-building-columns"></i>
+                    Filières
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table-2024">
+                    <thead>
+                        <tr>
+                            <th>Filière</th>
+                            <th>Code</th>
+                            <th>Cours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if total_filieres_list %}
+                            {% for filiere in total_filieres_list %}
+                            <tr>
+                                <td><strong>{{ filiere.libelle }}</strong></td>
+                                <td>{{ filiere.code }}</td>
+                                <td>
+                                    <span class="badge-2024 badge-success-2024">{{ filiere.cours_count }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="empty-state">Aucune filière enregistrée</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section : Dernières validations effectuées -->
     <div class="chart-section" style="margin-bottom: 2rem;">
         <div class="chart-header">
             <div class="chart-title">
                 <i class="fas fa-clipboard-check"></i>
-                Validations des notes
+                Dernières validations
+            </div>
+            <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+                <span><span style="color: var(--success); font-weight: 700;">{{ validations_ok }}</span> / {{ validations_total }} validées</span>
             </div>
         </div>
-        <div class="stats-container">
-            <a href="{% url 'liste_evaluations_a_valider' %}" class="stat-card-link">
-                <div class="stat-card-2024">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h3>En attente</h3>
-                            <div class="value">{{ pending_evaluations_count }}</div>
-                        </div>
-                        <div class="stat-icon staff">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                    </div>
-                </div>
-            </a>
-            <a href="{% url 'historique_validations' %}" class="stat-card-link">
-                <div class="stat-card-2024">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h3>Historique</h3>
-                            <div class="value">
-                                <i class="fas fa-history" style="font-size: 1.5rem; color: var(--primary);"></i>
-                            </div>
-                        </div>
-                        <div class="stat-icon users">
-                            <i class="fas fa-list"></i>
-                        </div>
-                    </div>
-                </div>
-            </a>
+        {% if dernieres_validations %}
+        <div class="table-responsive">
+            <table class="modern-table-2024">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Évaluation</th>
+                        <th>Filière</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in dernieres_validations %}
+                    <tr>
+                        <td>{{ v.date_validation|date:"d/m/Y H:i" }}</td>
+                        <td>{{ v.evaluation.cours.libelle }}</td>
+                        <td>{{ v.evaluation.cours.filiere.libelle }}</td>
+                        <td>
+                            {% if v.est_valide %}
+                            <span class="badge-2024 badge-success-2024">Validée</span>
+                            {% else %}
+                            <span class="badge-2024" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">Rejetée</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+            Aucune validation effectuée pour le moment
+        </div>
+        {% endif %}
     </div>
     {% else %}
     <div class="stats-container">
