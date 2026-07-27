@@ -42,11 +42,11 @@
                                     <i class="fas fa-graduation-cap fa-2x mb-2" style="color: #4f46e5;"></i>
                                     <h5 class="card-title text-dark">{{ promotion.libelle }}</h5>
                                     <div class="d-flex justify-content-center gap-2 mt-2">
-                                        <span class="badge bg-primary">
-                                            <i class="fas fa-clipboard-list me-1"></i>{{ promotion.nb_evaluations_attente }} éval.
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-clock me-1"></i>{{ promotion.nb_evaluations_attente }} à valider
                                         </span>
-                                        <span class="badge bg-secondary">
-                                            <i class="fas fa-users me-1"></i>{{ promotion.nb_etudiants }} ét.
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>{{ promotion.nb_evaluations_validees }} validées
                                         </span>
                                     </div>
                                     <div class="mt-2">

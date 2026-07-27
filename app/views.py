@@ -960,7 +960,7 @@ def liste_evaluations_a_valider(request):
     total_en_attente = 0
     
     for filiere in filieres:
-        # Récupérer les promotions de cette filière qui ont des évaluations non publiées avec notes
+        # Récupérer toutes les promotions de cette filière
         promotions = Promotion.objects.filter(
             filiere=filiere
         ).annotate(
@@ -972,8 +972,15 @@ def liste_evaluations_a_valider(request):
                 ),
                 distinct=True
             ),
+            nb_evaluations_validees=Count(
+                'filiere__cours__evaluation',
+                filter=Q(
+                    filiere__cours__evaluation__is_published=True
+                ),
+                distinct=True
+            ),
             nb_etudiants=Count('inscriptions__etudiant', distinct=True)
-        ).filter(nb_evaluations_attente__gt=0).order_by('libelle')
+        ).order_by('libelle')
         
         if promotions.exists():
             total_en_attente += sum(p.nb_evaluations_attente for p in promotions)
@@ -1006,7 +1013,7 @@ def detail_promotion_notes(request, promotion_id):
     # Récupérer les cours de la filière pour cette promotion (via l'année d'étude)
     cours_list = Cours.objects.filter(
         filiere=promotion.filiere,
-        annee_etude__libelle__icontains=promotion.libelle
+        annee_etude__code__icontains=promotion.libelle.split()[0]
     ).select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
     
     # Si aucun cours trouvé par année d'étude, prendre tous les cours de la filière
@@ -1015,10 +1022,9 @@ def detail_promotion_notes(request, promotion_id):
             filiere=promotion.filiere
         ).select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
     
-    # Récupérer toutes les évaluations non publiées pour ces cours
+    # Récupérer toutes les évaluations pour ces cours (publiées ou non)
     evaluations = Evaluation.objects.filter(
         cours__in=cours_list,
-        is_published=False,
         cotations__isnull=False
     ).distinct().select_related('type_evaluation', 'cours')
     
