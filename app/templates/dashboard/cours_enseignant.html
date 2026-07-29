@@ -314,6 +314,10 @@
                 </div>
             </div>
 
+            <a href="{% url 'creer_evaluation_enseignant' cours_id=item.cours.id %}" class="btn-action btn-primary" style="margin-bottom: 0.5rem; background: #059669;">
+                <i class="fas fa-plus-circle"></i>
+                Créer une évaluation
+            </a>
             <a href="{% url 'fiche_de_cotes_cours' cours_id=item.cours.id %}" class="btn-action btn-primary" style="margin-bottom: 0.5rem;">
                 <i class="fas fa-file-invoice"></i>
                 Voir la fiche de cotes

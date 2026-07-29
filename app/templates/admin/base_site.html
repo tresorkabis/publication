@@ -1,0 +1,338 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+
+{% block title %}Administration de l'ESFORCA{% endblock %}
+
+{% block branding %}
+<h1 id="custom-site-name">
+    <a href="{% url 'admin:index' %}">
+        <i class="fas fa-cogs"></i> Administration de l'ESFORCA
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Masquer toutes les références à Django */
+    .navbar-brand,
+    .navbar-brand span,
+    #header .navbar-brand,
+    #header .navbar-brand span,
+    .branding,
+    .branding span,
+    #site-name,
+    #site-name a,
+    #site-name span {
+        display: none !important;
+    }
+    
+    /* Afficher notre titre personnalisé */
+    #custom-site-name,
+    #custom-site-name a {
+        display: block !important;
+    }
+    
+    #custom-site-name a {
+        color: white !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    #custom-site-name i {
+        font-size: 1.75rem;
+    }
+    
+    /* Personnalisation complète de l'admin Django */
+    :root {
+        --primary-color: #0d3b66;
+        --secondary-color: #1c6ca8;
+        --accent-color: #4f46e5;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --light-bg: #f6f8fb;
+        --border-color: #e5e7eb;
+        --text-color: #1f2937;
+        --text-muted: #6b7280;
+    }
+
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Header */
+    #header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+        padding: 1.5rem 0 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+
+    /* Module principal */
+    .module {
+        background: white !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.3s ease;
+    }
+
+    .module:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .module caption {
+        background: var(--light-bg) !important;
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        padding: 1rem 1.25rem !important;
+        border-bottom: 2px solid var(--border-color) !important;
+        text-align: left !important;
+    }
+
+    .module table {
+        width: 100%;
+    }
+
+    .module th {
+        background: var(--light-bg) !important;
+        color: var(--text-muted) !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.75rem 1rem !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    .module td {
+        padding: 0.75rem 1rem !important;
+        color: var(--text-color) !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    .module tr:last-child td {
+        border-bottom: none !important;
+    }
+
+    .module tr:hover td {
+        background: rgba(79, 70, 229, 0.03) !important;
+    }
+
+    /* Actions */
+    .action-counter {
+        background: var(--accent-color) !important;
+        color: white !important;
+        border-radius: 8px !important;
+        padding: 0.25rem 0.75rem !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+    }
+
+    .action-counter:empty {
+        display: none;
+    }
+
+    /* Boutons */
+    .button, input[type="submit"], input[type="button"], .submit-row input, a.button {
+        background: var(--accent-color) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.25rem !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .button:hover, input[type="submit"]:hover, input[type="button"]:hover, a.button:hover {
+        background: #4338ca !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        color: white !important;
+    }
+
+    .button.default, input[type="submit"].default, .submit-row input.default {
+        background: var(--success-color) !important;
+    }
+
+    .button.default:hover, input[type="submit"].default:hover {
+        background: #059669 !important;
+    }
+
+    /* Sidebar */
+    #content-related {
+        background: white !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        padding: 1.25rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    #content-related h3 {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        margin-bottom: 1rem !important;
+        padding-bottom: 0.75rem !important;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    #content-related ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #content-related li {
+        margin-bottom: 0.5rem;
+    }
+
+    #content-related a {
+        color: var(--accent-color) !important;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: block;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    #content-related a:hover {
+        background: var(--light-bg);
+        color: var(--primary-color) !important;
+        transform: translateX(4px);
+    }
+
+    /* Formulaires */
+    .form-row {
+        padding: 1.25rem !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    .form-row:last-child {
+        border-bottom: none !important;
+    }
+
+    .form-row label {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+    }
+
+    .form-row input, .form-row select, .form-row textarea {
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 0.75rem !important;
+        font-size: 0.9rem !important;
+        transition: all 0.2s ease;
+    }
+
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+        border-color: var(--accent-color) !important;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+    }
+
+    /* Messages */
+    .messagelist {
+        background: white !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        padding: 1rem 1.25rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .messagelist li {
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 0 !important;
+    }
+
+    .messagelist li.success {
+        color: var(--success-color) !important;
+    }
+
+    .messagelist li.warning {
+        color: var(--warning-color) !important;
+    }
+
+    .messagelist li.error {
+        color: var(--danger-color) !important;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumb {
+        background: white !important;
+        padding: 0.75rem 1.25rem !important;
+        border-radius: 8px !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .breadcrumb a {
+        color: var(--accent-color) !important;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .breadcrumb a:hover {
+        color: var(--primary-color) !important;
+    }
+
+    /* Pagination */
+    .paginator {
+        background: white !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .paginator a {
+        color: var(--accent-color) !important;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .paginator a:hover {
+        background: var(--light-bg);
+        color: var(--primary-color) !important;
+    }
+
+    .paginator .this-page {
+        background: var(--accent-color) !important;
+        color: white !important;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        #site-name a {
+            font-size: 1.2rem !important;
+        }
+        
+        .module {
+            border-radius: 8px !important;
+        }
+    }
+</style>
+{% endblock %}

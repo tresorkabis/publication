@@ -63,8 +63,8 @@ def profile(request):
 
 @login_required
 def dashboard(request):
-    # Rediriger les enseignants vers leur dashboard spécifique
-    if request.user.has_role('enseignant') and hasattr(request.user, 'personnel'):
+    # Rediriger les enseignants vers leur dashboard spécifique (sauf les administrateurs)
+    if not (request.user.is_superuser or request.user.is_staff) and request.user.has_role('enseignant') and hasattr(request.user, 'personnel'):
         return redirect('dashboard_enseignant')
     
     if hasattr(request.user, 'etudiant'):
@@ -353,7 +353,7 @@ def planifier_examen(request):
 
 @login_required
 def dashboard_enseignant(request):
-    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+    if not (request.user.is_superuser or request.user.is_staff or (hasattr(request.user, 'personnel') and request.user.has_role('enseignant'))):
         messages.error(request, "Accès réservé aux enseignants.")
         return redirect('dashboard')
 
@@ -466,6 +466,34 @@ def evaluations_enseignant(request):
 
 
 @login_required
+def propositions_enseignant(request):
+    """Affiche toutes les propositions de cours de l'enseignant"""
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+
+    propositions_en_attente = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        est_accepte=False
+    ).select_related('cours', 'cours__filiere').order_by('-date_proposition')
+
+    propositions_acceptees = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        est_accepte=True
+    ).select_related('cours', 'cours__filiere').order_by('-date_proposition')
+
+    context = {
+        'enseignant': enseignant,
+        'propositions_en_attente': propositions_en_attente,
+        'propositions_acceptees': propositions_acceptees,
+    }
+
+    return render(request, 'dashboard/propositions_enseignant.html', context)
+
+
+@login_required
 def cours_enseignant(request):
     if not hasattr(request.user, 'personnel'):
         messages.error(request, "Accès réservé au personnel.")
@@ -500,6 +528,56 @@ def cours_enseignant(request):
     }
     
     return render(request, 'dashboard/cours_enseignant.html', context)
+
+
+@login_required
+def creer_evaluation_enseignant(request, cours_id):
+    """Permet à un enseignant de créer une évaluation pour un de ses cours"""
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    cours = get_object_or_404(Cours, pk=cours_id)
+
+    # Vérifier que l'enseignant est bien assigné à ce cours
+    is_assigned = ProposalCoursEnseignant.objects.filter(
+        enseignant=enseignant,
+        cours=cours,
+        est_accepte=True
+    ).exists()
+
+    if not is_assigned:
+        messages.error(request, "Vous n'êtes pas autorisé à créer une évaluation pour ce cours.")
+        return redirect('cours_enseignant')
+
+    if request.method == 'POST':
+        type_eval_id = request.POST.get('type_evaluation')
+        date_eval = request.POST.get('date')
+        coefficient = request.POST.get('coefficient', 1)
+        duree = request.POST.get('duree_minutes', 60)
+
+        if not type_eval_id or not date_eval:
+            messages.error(request, "Veuillez remplir tous les champs obligatoires.")
+        else:
+            type_eval = get_object_or_404(TypeEvaluation, pk=type_eval_id)
+            evaluation = Evaluation.objects.create(
+                type_evaluation=type_eval,
+                cours=cours,
+                date=date_eval,
+                coefficient=coefficient,
+                duree_minutes=duree,
+                is_published=False
+            )
+            messages.success(request, f"Évaluation '{type_eval.libelle}' créée avec succès pour le cours '{cours.libelle}'.")
+            return redirect('saisie_notes_enseignant', evaluation_id=evaluation.pk)
+
+    types_eval = TypeEvaluation.objects.all()
+    return render(request, 'dashboard/creer_evaluation_enseignant.html', {
+        'cours': cours,
+        'types_evaluation': types_eval,
+        'enseignant': enseignant,
+    })
 
 @login_required
 def fiche_de_cotes_cours(request, cours_id):
@@ -751,6 +829,25 @@ def proposer_cours(request):
         form = PropositionCoursForm(filieres=filieres)
 
     return render(request, 'results/proposer_cours.html', {'form': form, 'filieres': filieres})
+
+
+@login_required
+def accepter_proposition(request, proposition_id):
+    """Permet à un enseignant d'accepter une proposition de cours"""
+    if not (hasattr(request.user, 'personnel') and request.user.has_role('enseignant')):
+        messages.error(request, "Accès réservé aux enseignants.")
+        return redirect('dashboard')
+
+    enseignant = request.user.personnel
+    proposition = get_object_or_404(ProposalCoursEnseignant, pk=proposition_id, enseignant=enseignant)
+
+    if request.method == 'POST':
+        proposition.est_accepte = True
+        proposition.save()
+        messages.success(request, f"Proposition acceptée ! Le cours '{proposition.cours.libelle}' a été ajouté à vos cours.")
+        return redirect('dashboard_enseignant')
+
+    return redirect('dashboard_enseignant')
 
 @login_required
 def manage_marks(request, evaluation_id):

@@ -92,13 +92,21 @@ class PlanificationExamenForm(forms.ModelForm):
         self.fields['coefficient'].label = 'Coefficient'
 
 
+class EnseignantChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
 class PropositionCoursForm(forms.ModelForm):
+    enseignant = EnseignantChoiceField(
+        queryset=Personnel.objects.none(),
+        widget=forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'})
+    )
+
     class Meta:
         model = ProposalCoursEnseignant
         fields = ['cours', 'enseignant', 'message']
         widgets = {
             'cours': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
-            'enseignant': forms.Select(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}),
             'message': forms.Textarea(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500', 'rows': 4}),
         }
 

@@ -406,17 +406,19 @@
             </div>
         </a>
 
-        <div class="stat-card">
-            <div class="stat-content">
-                <div class="stat-info">
-                    <h3>Propositions en attente</h3>
-                    <div class="value">{{ propositions_en_attente|length }}</div>
-                </div>
-                <div class="stat-icon pending">
-                    <i class="fas fa-hourglass-half"></i>
+        <a href="{% url 'propositions_enseignant' %}" class="stat-card-link">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Propositions en attente</h3>
+                        <div class="value">{{ propositions_en_attente|length }}</div>
+                    </div>
+                    <div class="stat-icon pending">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Mes Cours -->
@@ -536,7 +538,7 @@
     </div>
 
     <!-- Propositions de cours -->
-    <div class="content-card">
+    <div class="content-card" id="propositions-section">
         <div class="card-header">
             <div class="card-title">
                 <i class="fas fa-hand-paper"></i>
@@ -561,7 +563,12 @@
                         <td>{{ proposition.cours.filiere.libelle }}</td>
                         <td>{{ proposition.date_proposition|date:'d/m/Y' }}</td>
                         <td>
-                            <span class="badge badge-warning">En attente</span>
+                            <form method="post" action="{% url 'accepter_proposition' proposition.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="badge badge-warning" style="border:none; cursor:pointer; text-decoration:underline; background:rgba(245, 158, 11, 0.1); color:#f59e0b; padding:0.25rem 0.6rem; font-size:0.75rem; font-weight:500; border-radius:9999px;">
+                                    En attente - Cliquer pour accepter
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
