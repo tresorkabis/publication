@@ -64,7 +64,7 @@ def profile(request):
 @login_required
 def dashboard(request):
     # Rediriger les enseignants vers leur dashboard spécifique
-    if hasattr(request.user, 'personnel') and request.user.has_role('enseignant'):
+    if request.user.has_role('enseignant') and hasattr(request.user, 'personnel'):
         return redirect('dashboard_enseignant')
     
     if hasattr(request.user, 'etudiant'):
@@ -153,129 +153,10 @@ def dashboard(request):
         return render(request, 'dashboard.html', context)
 
     if request.user.has_role('president'):
-        pending_evaluations = Evaluation.objects.filter(is_published=False).select_related('cours', 'cours__filiere').order_by('cours__filiere', 'date')
-        published_evaluations = Evaluation.objects.filter(is_published=True)
-
-        # Donner les accès admin au président si nécessaire
-        if not request.user.is_staff:
-            request.user.is_staff = True
-            request.user.save()
-
-        # Statistiques générales améliorées
-        total_etudiants = Etudiant.objects.count()
-        total_enseignants = Personnel.objects.filter(user__utilisateur_roles__role__libelle='enseignant').count()
-        total_evaluations = Evaluation.objects.count()
-        total_publiees = published_evaluations.count()
-        total_en_attente = pending_evaluations.count()
-        validations_total = ValidationNotes.objects.count()
-        validations_ok = ValidationNotes.objects.filter(est_valide=True).count()
-
-        # Récupérer toutes les promotions avec leurs étudiants et moyennes
-        promotions = Promotion.objects.all().select_related('filiere').prefetch_related(
-            'inscriptions__etudiant__user',
-            'inscriptions__etudiant__cotations__evaluation'
-        ).order_by('filiere__libelle', 'libelle')
-
-        promotions_moyennes = []
-        total_etudiants_notes = 0
-        etudiants_valides = 0
-        for promotion in promotions:
-            etudiants_data = []
-            for inscription in promotion.inscriptions.all():
-                etudiant = inscription.etudiant
-                cotations = Cotation.objects.filter(
-                    etudiant=etudiant,
-                    evaluation__is_published=True
-                ).select_related('evaluation', 'evaluation__cours', 'evaluation__type_evaluation')
-
-                cours_moyennes = {}
-                for cotation in cotations:
-                    cours_id = cotation.evaluation.cours.id
-                    cours_libelle = cotation.evaluation.cours.libelle
-                    if cours_id not in cours_moyennes:
-                        cours_moyennes[cours_id] = {
-                            'cours': cours_libelle,
-                            'cotations': []
-                        }
-                    cours_moyennes[cours_id]['cotations'].append(cotation)
-
-                toutes_notes = []
-                for cours_data in cours_moyennes.values():
-                    notes_cours = [float(c.note) for c in cours_data['cotations']]
-                    if notes_cours:
-                        toutes_notes.append(sum(notes_cours) / len(notes_cours))
-
-                moyenne_generale = round(sum(toutes_notes) / len(toutes_notes), 2) if toutes_notes else None
-                
-                if moyenne_generale is not None:
-                    total_etudiants_notes += 1
-                    if moyenne_generale >= 10:
-                        etudiants_valides += 1
-
-                etudiants_data.append({
-                    'etudiant': etudiant,
-                    'moyenne': moyenne_generale,
-                    'valide': moyenne_generale >= 10 if moyenne_generale else False,
-                    'inscription': inscription,
-                    'inscription_validee': inscription.est_validee,
-                })
-
-            promotions_moyennes.append({
-                'promotion': promotion,
-                'etudiants': etudiants_data
-            })
-
-        # Dernières validations
-        dernieres_validations = ValidationNotes.objects.select_related(
-            'evaluation', 'evaluation__cours', 'evaluation__cours__filiere', 'validateur__user'
-        ).order_by('-date_validation')[:5]
-
-        # Évaluations en attente avec stats
-        evaluations_avec_stats = []
-        for evaluation in pending_evaluations[:8]:
-            cotations = Cotation.objects.filter(evaluation=evaluation)
-            nb_notes = cotations.count()
-            moyenne = cotations.aggregate(moyenne=Avg('note'))['moyenne']
-            evaluations_avec_stats.append({
-                'evaluation': evaluation,
-                'nb_notes': nb_notes,
-                'moyenne': round(moyenne, 2) if moyenne else None,
-            })
-
-        # Évaluations récemment publiées
-        recent_publiees = published_evaluations.select_related(
-            'cours', 'cours__filiere'
-        ).order_by('-published_at', '-id')[:5]
-
-        context = {
-            'is_president': True,
-            'total_filieres': Filiere.objects.count(),
-            'total_cours': Cours.objects.count(),
-            'total_enseignants': total_enseignants,
-            'total_etudiants': total_etudiants,
-            'total_evaluations': total_evaluations,
-            'total_publiees': total_publiees,
-            'pending_evaluations': pending_evaluations,
-            'pending_evaluations_count': total_en_attente,
-            'evaluations_avec_stats': evaluations_avec_stats,
-            'recent_publiees': recent_publiees,
-            'filieres_with_pending_evals': Filiere.objects.filter(
-                cours__evaluation__is_published=False
-            ).annotate(pending_count=Count('cours__evaluation')).distinct(),
-            'promotions_moyennes': promotions_moyennes,
-            'total_filieres_list': (lambda qs: (lambda seen: [
-                f for f in qs if f.libelle not in seen and not seen.add(f.libelle)
-            ])(set()))(Filiere.objects.all().annotate(
-                cours_count=Count('cours', distinct=True)
-            )),
-            'niveaux_promotions': Promotion.objects.all().select_related('filiere').order_by('filiere__libelle', 'libelle'),
-            'total_etudiants_notes': total_etudiants_notes,
-            'etudiants_valides': etudiants_valides,
-            'validations_total': validations_total,
-            'validations_ok': validations_ok,
-            'dernieres_validations': dernieres_validations,
-        }
-        return render(request, 'dashboard.html', context)
+        # Le dashboard du président est la page de validation des notes par promotion.
+        # On utilise la vue `liste_evaluations_a_valider` comme dashboard principal
+        # mais on ne redirige pas pour lui permettre d'accéder aux autres menus si besoin.
+        return liste_evaluations_a_valider(request)
 
 
     # Statistiques générales
@@ -998,111 +879,72 @@ def liste_evaluations_a_valider(request):
 
 @login_required
 def detail_promotion_notes(request, promotion_id):
-    """Tableau des étudiants × cours avec les moyennes pour une promotion donnée"""
     if not (hasattr(request.user, 'personnel') and request.user.has_role('president')):
         messages.error(request, "Accès réservé au président.")
         return redirect('dashboard')
 
     promotion = get_object_or_404(Promotion.objects.select_related('filiere'), pk=promotion_id)
     
-    # Récupérer les étudiants de cette promotion
+    # Étape 1: Récupérer les données de base (étudiants et cours)
     etudiants = Etudiant.objects.filter(
         inscriptions__promotion=promotion
     ).distinct().select_related('user').order_by('user__nom', 'user__postnom', 'user__prenom')
     
-    # Récupérer les cours de la filière pour cette promotion (via l'année d'étude)
     cours_list = Cours.objects.filter(
-        filiere=promotion.filiere,
-        annee_etude__code__icontains=promotion.libelle.split()[0]
-    ).select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
-    
-    # Si aucun cours trouvé par année d'étude, prendre tous les cours de la filière
-    if not cours_list.exists():
-        cours_list = Cours.objects.filter(
-            filiere=promotion.filiere
-        ).select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
-    
-    # Récupérer toutes les évaluations pour ces cours (publiées ou non)
-    evaluations = Evaluation.objects.filter(
-        cours__in=cours_list,
-        cotations__isnull=False
-    ).distinct().select_related('type_evaluation', 'cours')
-    
-    # Récupérer toutes les cotations pour ces évaluations
-    cotations = Cotation.objects.filter(
-        evaluation__in=evaluations
-    ).select_related('evaluation', 'evaluation__type_evaluation', 'evaluation__cours')
-    
-    # Construire les lignes du tableau : chaque ligne = étudiant avec ses notes par cours
-    # Structure: [{ 'etudiant': obj, 'notes_cours': { cours_id: { 'tp', 'interro', 'examen', 'moyenne' } } }]
-    cours_avec_evaluations = set(evaluations.values_list('cours_id', flat=True))
-    
-    # Construire un dictionnaire {etudiant_id: {cours_id: notes}}
-    notes_par_etudiant = {}
-    for etudiant in etudiants:
-        notes_par_etudiant[etudiant.id] = {}
-    
+        filiere=promotion.filiere
+    ).distinct().select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
+
+    # Étape 2: Récupérer toutes les évaluations et notes pertinentes
+    evaluations = Evaluation.objects.filter(cours__in=cours_list).select_related('type_evaluation', 'cours')
+    cotations = Cotation.objects.filter(evaluation__in=evaluations, etudiant__in=etudiants)
+
+    # Étape 3: Calculer la moyenne pondérée pour chaque étudiant et chaque cours
+    moyennes_par_etudiant = {} # {etudiant_id: {cours_id: moyenne}}
     for cotation in cotations:
         etudiant_id = cotation.etudiant_id
         cours_id = cotation.evaluation.cours_id
-        
-        if cours_id not in cours_avec_evaluations:
-            continue
-            
-        if etudiant_id not in notes_par_etudiant:
-            notes_par_etudiant[etudiant_id] = {}
-            
-        if cours_id not in notes_par_etudiant[etudiant_id]:
-            notes_par_etudiant[etudiant_id][cours_id] = {
-                'tp': None,
-                'interro': None,
-                'examen': None,
-                'moyenne': None,
-            }
-        
-        type_libelle = cotation.evaluation.type_evaluation.libelle
+        coeff = cotation.evaluation.coefficient
         note = float(cotation.note)
-        
-        if 'Travail Pratique' in type_libelle:
-            notes_par_etudiant[etudiant_id][cours_id]['tp'] = note
-        elif 'Interrogation' in type_libelle:
-            notes_par_etudiant[etudiant_id][cours_id]['interro'] = note
-        elif 'Examen' in type_libelle:
-            notes_par_etudiant[etudiant_id][cours_id]['examen'] = note
-    
-    # Calculer la moyenne pour chaque étudiant × cours
-    for etudiant_id, cours_data in notes_par_etudiant.items():
-        for cours_id, notes in cours_data.items():
-            notes_values = [n for n in [notes['tp'], notes['interro'], notes['examen']] if n is not None]
-            if notes_values:
-                notes['moyenne'] = round(sum(notes_values) / len(notes_values), 2)
-    
-    # Construire les lignes du tableau avec les notes directement accessibles par index
-    cours_a_afficher = [c for c in cours_list if c.id in cours_avec_evaluations]
-    cours_ids = [c.id for c in cours_a_afficher]
-    code_par_cours_id = {c.id: c.code for c in cours_a_afficher}
 
+        # Initialiser le dictionnaire si nécessaire
+        moyennes_par_etudiant.setdefault(etudiant_id, {})
+        moyennes_par_etudiant[etudiant_id].setdefault(cours_id, {'total_pondere': 0, 'total_coeffs': 0})
+        
+        # Agréger les notes pondérées
+        moyennes_par_etudiant[etudiant_id][cours_id]['total_pondere'] += note * coeff
+        moyennes_par_etudiant[etudiant_id][cours_id]['total_coeffs'] += coeff
+
+    # Étape 4: Préparer les lignes du tableau pour un affichage simple dans le template
     lignes_tableau = []
     for etudiant in etudiants:
-        notes_par_cours = []
-        for cours_id in cours_ids:
-            notes = notes_par_etudiant.get(etudiant.id, {}).get(cours_id, None)
-            notes_par_cours.append({
-                'cours_id': cours_id,
-                'cours_code': code_par_cours_id.get(cours_id, ''),
-                'notes': notes,
-            })
+        moyennes_cours = []
+        for cours in cours_list:
+            data = moyennes_par_etudiant.get(etudiant.id, {}).get(cours.id)
+            moyenne = None
+            if data and data.get('total_coeffs', 0) > 0:
+                moyenne = round(data['total_pondere'] / data['total_coeffs'], 2)
+            moyennes_cours.append(moyenne)
+        
         lignes_tableau.append({
             'etudiant': etudiant,
-            'notes_par_cours': notes_par_cours,
+            'moyennes': moyennes_cours, # Une liste simple des moyennes dans le même ordre que cours_list
         })
     
+    # Étape 5: Récupérer la liste des évaluations en attente pour les actions de validation
+    evaluations_en_attente = evaluations.filter(
+        is_published=False, 
+        cotations__isnull=False
+    ).distinct().annotate(
+        nb_notes=Count('cotations'),
+        moyenne=Avg('cotations__note'),
+    )
+
+    # Étape 6: Préparer le contexte final. Le tableau est toujours présent.
     context = {
         'promotion': promotion,
         'lignes_tableau': lignes_tableau,
-        'cours_list': cours_a_afficher,
-        'total_etudiants': etudiants.count(),
-        'total_cours': len(cours_a_afficher),
+        'cours_list': cours_list,
+        'evaluations_en_attente': evaluations_en_attente,
     }
     return render(request, 'dashboard/detail_promotion_notes.html', context)
 
@@ -1149,6 +991,10 @@ def valider_evaluation(request, evaluation_id):
             
             messages.warning(request, f"L'évaluation de {evaluation.cours.libelle} a été rejetée. Les notes ont été supprimées.")
 
+        # Rediriger vers la page de la promotion si possible, sinon vers la liste générale
+        if evaluation.cours.filiere and evaluation.cours.filiere.promotion_set.first():
+            promotion = evaluation.cours.filiere.promotion_set.first()
+            return redirect('detail_promotion_notes', promotion_id=promotion.id)
         return redirect('liste_evaluations_a_valider')
 
     # GET: afficher le détail de l'évaluation
@@ -1157,9 +1003,7 @@ def valider_evaluation(request, evaluation_id):
     ).order_by('etudiant__user__nom', 'etudiant__user__postnom')
 
     context = {
-        'evaluation': evaluation,
-        'cotations': cotations,
-        'nb_notes': cotations.count(),
+        'evaluation': evaluation
     }
     return render(request, 'dashboard/valider_evaluation.html', context)
 
@@ -1171,10 +1015,8 @@ def historique_validations(request):
         return redirect('dashboard')
 
     validations = ValidationNotes.objects.filter(
-        validateur=request.user.personnel
-    ).select_related(
-        'evaluation', 'evaluation__cours', 'evaluation__cours__filiere'
-    ).order_by('-date_validation')
+        validateur=request.user.personnel,
+    ).select_related('evaluation__cours__filiere', 'validateur__user').order_by('-date_validation')
 
     # Calculer les statistiques
     total_validations = validations.count()

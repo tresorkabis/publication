@@ -14,88 +14,110 @@
                 <i class="fas fa-graduation-cap" style="color: #4f46e5;"></i>
                 {{ promotion.libelle }} - {{ promotion.filiere.libelle }}
             </h1>
-            <p class="text-muted mb-0">
-                <i class="fas fa-users me-1"></i>{{ total_etudiants }} étudiant(s) | 
-                <i class="fas fa-book ms-2 me-1"></i>{{ total_cours }} cours
-            </p>
         </div>
         <a href="{% url 'historique_validations' %}" class="btn btn-info">
             <i class="fas fa-history"></i> Historique
         </a>
     </div>
 
-    {% if cours_list and etudiants %}
+    {% if cours_list and lignes_tableau %}
+    <!-- Section des actions de validation -->
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #fffbe6;">
+            <h5 class="mb-0 text-warning-dark">
+                <i class="fas fa-hourglass-half me-2"></i>
+                Évaluations en attente de validation ({{ evaluations_en_attente|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if evaluations_en_attente %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th class="text-center">Notes Saisies</th>
+                            <th class="text-center">Moyenne</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluations_en_attente %}
+                        <tr>
+                            <td><strong>{{ eval.cours.libelle }}</strong></td>
+                            <td>{{ eval.type_evaluation.libelle }}</td>
+                            <td>{{ eval.date|date:"d/m/Y" }}</td>
+                            <td class="text-center">{{ eval.nb_notes }}</td>
+                            <td class="text-center">{{ eval.moyenne|floatformat:2 }}/20</td>
+                            <td class="text-end">
+                                <form action="{% url 'valider_evaluation' eval.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" name="action" value="valider" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Valider
+                                    </button>
+                                    <button type="submit" name="action" value="rejeter" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette évaluation ? Les notes seront supprimées.')">
+                                        <i class="fas fa-times"></i> Rejeter
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-success mb-0">
+                <i class="fas fa-check-circle me-2"></i>
+                Aucune évaluation en attente pour cette promotion.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Grille des notes -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
             <h5 class="mb-0">
-                <i class="fas fa-table me-2"></i>Notes en attente de validation
+                <i class="fas fa-table me-2"></i>Grille des notes (Délibération)
             </h5>
-            <span class="badge bg-warning text-dark">
-                <i class="fas fa-clock me-1"></i>Non publiées
-            </span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive" style="overflow-x: auto;">
                 <table class="table table-bordered table-hover mb-0" style="min-width: 800px;">
                     <thead>
                         <tr>
-                            <th class="text-center align-middle" style="width: 50px; background-color: #f0f4ff; position: sticky; left: 0; z-index: 2;">N°</th>
-                            <th class="align-middle" style="min-width: 200px; background-color: #f0f4ff; position: sticky; left: 50px; z-index: 2;">Étudiant</th>
+                            <th class="text-center align-middle" style="width: 50px; background-color: #f0f4ff; position: sticky; left: 0; z-index: 2;">#</th>
+                            <th class="align-middle" style="min-width: 250px; background-color: #f0f4ff; position: sticky; left: 50px; z-index: 2;">Étudiant</th>
                             {% for cours in cours_list %}
                             <th class="text-center align-middle" style="min-width: 120px; background-color: #f0f4ff;">
                                 <div class="small fw-bold">{{ cours.libelle }}</div>
                                 <div class="small text-muted" style="font-size: 0.7rem;">{{ cours.code }}</div>
-                                <div class="small text-muted" style="font-size: 0.65rem;">S{{ cours.semestre.libelle|cut:"Semestre " }}</div>
                             </th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for ligne in lignes_tableau %}
-                    {% with etudiant=ligne.etudiant notes_par_cours=ligne.notes_par_cours %}
                         <tr>
                             <td class="text-center align-middle fw-bold" style="background-color: #f8fafc; position: sticky; left: 0; z-index: 1;">{{ forloop.counter }}</td>
                             <td class="align-middle" style="background-color: #f8fafc; position: sticky; left: 50px; z-index: 1;">
-                                <div class="fw-bold">{{ etudiant.user.nom }} {{ etudiant.user.postnom }}</div>
-                                <div class="small text-muted">{{ etudiant.user.prenom|default:"" }}</div>
-                                <div class="small text-muted">Mat: {{ etudiant.matricule|default:"N/A" }}</div>
+                                <div class="fw-bold">{{ ligne.etudiant.user.get_full_name }}</div>
+                                <div class="small text-muted">Mat: {{ ligne.etudiant.matricule|default:"N/A" }}</div>
                             </td>
-                            {% for item in notes_par_cours %}
+                            {% for moyenne in ligne.moyennes %}
                             <td class="text-center align-middle">
-                                {% with notes=item.notes %}
-                                    {% if notes %}
-                                        <div class="d-flex flex-column align-items-center gap-1">
-                                            {% if notes.tp is not None %}
-                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; width: 85px;">
-                                                TP: {{ notes.tp }}/20
-                                            </span>
-                                            {% endif %}
-                                            {% if notes.interro is not None %}
-                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem; width: 85px;">
-                                                Int: {{ notes.interro }}/20
-                                            </span>
-                                            {% endif %}
-                                            {% if notes.examen is not None %}
-                                            <span class="badge bg-danger" style="font-size: 0.7rem; width: 85px;">
-                                                Ex: {{ notes.examen }}/20
-                                            </span>
-                                            {% endif %}
-                                            {% if notes.moyenne is not None %}
-                                            <span class="fw-bold mt-1 {% if notes.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}" style="font-size: 0.85rem;">
-                                                {{ notes.moyenne }}/20
-                                            </span>
-                                            {% else %}
-                                            <span class="text-muted small">-</span>
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted small">-</span>
-                                    {% endif %}
-                                {% endwith %}
+                                {% if moyenne is not None %}
+                                    <span class="fw-bold {% if moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ moyenne }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
                             </td>
                             {% endfor %}
                         </tr>
-                    {% endwith %}
                     {% endfor %}
                     </tbody>
                 </table>
@@ -103,10 +125,14 @@
         </div>
     </div>
     {% else %}
-    <div class="alert alert-success">
-        <i class="fas fa-check-circle"></i>
-        <strong>Aucune note en attente de validation pour cette promotion.</strong>
-        Toutes les notes ont déjà été validées.
+    <div class="alert alert-warning">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Données manquantes.</strong>
+        <p class="mb-0">Impossible d'afficher la grille de notes. Veuillez vérifier les points suivants :</p>
+        <ul>
+            <li>Assurez-vous que des étudiants sont bien inscrits dans la promotion <strong>{{ promotion.libelle }}</strong>.</li>
+            <li>Vérifiez que des cours sont bien associés à la filière <strong>{{ promotion.filiere.libelle }}</strong>.</li>
+        </ul>
     </div>
     {% endif %}
 </div>
