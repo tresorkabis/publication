@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 django.setup()
 
 from django.contrib.auth import get_user_model
-from app.models import Etudiant, Role, UtilisateurRole, Filiere, Promotion, Inscription, Cours, Evaluation, Cotation
+from app.models import Etudiant, Role, UtilisateurRole, Filiere, Promotion, Inscription, Cours, Evaluation, Cotation, TypeEvaluation
 from decimal import Decimal
 import random
 
@@ -127,7 +127,7 @@ def create_demo_student():
     # Créer des évaluations et notes
     print("\n📝 Création d'évaluations et notes de démonstration...")
     
-    type_examen, _ = Role.objects.get_or_create(libelle="Examen")
+    type_examen, _ = TypeEvaluation.objects.get_or_create(libelle="Examen")
     
     for cours in cours_crees:
         # Créer une évaluation
