@@ -297,14 +297,17 @@ class Command(BaseCommand):
     def create_promotions(self):
         filieres = Filiere.objects.all()
         niveaux = ['L1', 'L2', 'L3', 'M1', 'M2']
+        annees_etude = {a.code: a for a in AnneeEtude.objects.all()}
 
         # Créer d'abord toutes les promotions
         for filiere in filieres:
             for i, niveau in enumerate(niveaux):
                 annee = 2024 - (len(niveaux) - 1 - i)
+                annee_etude = annees_etude.get(niveau)
                 Promotion.objects.get_or_create(
                     filiere=filiere,
-                    libelle=f'{niveau} {filiere.code}'
+                    libelle=f'{niveau} {filiere.code}',
+                    defaults={'annee_etude': annee_etude}
                 )
 
         # Ensuite, inscrire les étudiants avec une répartition réaliste
@@ -418,12 +421,23 @@ class Command(BaseCommand):
             if not matieres_par_annee:
                 continue
                 
+            # Mapping année d'étude → indices de semestres (2 semestres par niveau)
+            annee_semestre_indices = {
+                'L1': [0, 1],  # Semestres 1 et 2
+                'L2': [2, 3],  # Semestres 3 et 4
+                'L3': [4, 5],  # Semestres 5 et 6
+            }
+            
             for annee_code, matieres in matieres_par_annee.items():
                 annee = annees.get(annee_code)
                 if not annee:
                     continue
+                # Récupérer les indices de semestres pour cette année d'étude
+                indices_semestres = annee_semestre_indices.get(annee_code, [0, 1])
                 for i, (matiere, credit) in enumerate(matieres):
-                    semestre = semestres[i % len(semestres)]
+                    # Assigner le semestre selon le niveau (alternance entre les 2 semestres du niveau)
+                    semestre_index = indices_semestres[i % 2]
+                    semestre = semestres[semestre_index]
                     Cours.objects.get_or_create(
                         code=f'{filiere.code}{annee_code}{i+1:02d}',
                         defaults={
