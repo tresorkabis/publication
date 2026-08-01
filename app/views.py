@@ -961,6 +961,11 @@ def liste_evaluations_a_valider(request):
         promotions = Promotion.objects.filter(
             filiere=filiere
         ).annotate(
+            nb_cours=Count(
+                'filiere__cours',
+                filter=Q(filiere__cours__annee_etude=F('annee_etude')),
+                distinct=True
+            ),
             nb_evaluations_attente=Count(
                 'filiere__cours__evaluation',
                 filter=Q(
@@ -1013,9 +1018,8 @@ def detail_promotion_notes(request, promotion_id):
             annee_etude_id=promotion.annee_etude_id
         ).distinct().select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
     else:
-        cours_list = Cours.objects.filter(
-            filiere=promotion.filiere
-        ).distinct().select_related('semestre', 'annee_etude').order_by('semestre__libelle', 'libelle')
+        # Si pas d'année d'étude définie pour la promotion, on ne peut pas charger de cours spécifiques
+        cours_list = Cours.objects.none()
 
     # Grouper les cours par semestre
     cours_par_semestre = {}
@@ -1033,6 +1037,9 @@ def detail_promotion_notes(request, promotion_id):
         semestres_groupes.append(groupe)
 
     # Étape 2: Récupérer toutes les évaluations et notes pertinentes
+    # Pour les évaluations en attente, on utilise uniquement les cours de la promotion sélectionnée
+    evaluations_toutes = Evaluation.objects.filter(cours__in=cours_list).select_related('type_evaluation', 'cours')
+    # Pour le calcul des moyennes dans la grille, on utilise seulement les cours de la promotion
     evaluations = Evaluation.objects.filter(cours__in=cours_list).select_related('type_evaluation', 'cours')
     cotations = Cotation.objects.filter(evaluation__in=evaluations, etudiant__in=etudiants)
 
@@ -1072,9 +1079,11 @@ def detail_promotion_notes(request, promotion_id):
         })
     
     # Étape 5: Récupérer la liste des évaluations en attente pour les actions de validation
-    evaluations_en_attente = evaluations.filter(
-        is_published=False, 
-        cotations__isnull=False
+    # Utiliser uniquement les cours de la promotion sélectionnée
+    evaluations_en_attente = Evaluation.objects.filter(
+        cours__in=cours_list,
+        is_published=False,
+        cotations__etudiant__in=etudiants
     ).distinct().annotate(
         nb_notes=Count('cotations'),
         moyenne=Avg('cotations__note'),
@@ -1169,6 +1178,15 @@ def valider_evaluation(request, evaluation_id):
     evaluation = get_object_or_404(Evaluation, pk=evaluation_id)
     president = request.user.personnel
 
+    # Récupérer les cotations avec les détails des étudiants
+    cotations = Cotation.objects.filter(evaluation=evaluation).select_related(
+        'etudiant', 'etudiant__user'
+    ).order_by('etudiant__user__nom', 'etudiant__user__postnom')
+
+    # Calculer la moyenne de l'évaluation
+    moyenne_evaluation = cotations.aggregate(Avg('note'))['note__avg'] if cotations.exists() else None
+    nb_notes = cotations.count()
+
     if request.method == 'POST':
         action = request.POST.get('action')
         commentaire = request.POST.get('commentaire', '')
@@ -1209,12 +1227,11 @@ def valider_evaluation(request, evaluation_id):
         return redirect('liste_evaluations_a_valider')
 
     # GET: afficher le détail de l'évaluation
-    cotations = Cotation.objects.filter(evaluation=evaluation).select_related(
-        'etudiant', 'etudiant__user'
-    ).order_by('etudiant__user__nom', 'etudiant__user__postnom')
-
     context = {
-        'evaluation': evaluation
+        'evaluation': evaluation,
+        'cotations': cotations,
+        'moyenne_evaluation': round(moyenne_evaluation, 2) if moyenne_evaluation else None,
+        'nb_notes': nb_notes,
     }
     return render(request, 'dashboard/valider_evaluation.html', context)
 

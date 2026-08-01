@@ -28,6 +28,9 @@
                     <p><strong>Type d'évaluation :</strong> {{ evaluation.type_evaluation.libelle }}</p>
                     <p><strong>Date :</strong> {{ evaluation.date|date:"d/m/Y" }}</p>
                     <p><strong>Coefficient :</strong> {{ evaluation.coefficient }}</p>
+                    {% if moyenne_evaluation %}
+                    <p><strong>Moyenne de l'évaluation :</strong> <span class="fw-bold text-primary">{{ moyenne_evaluation }}/20</span></p>
+                    {% endif %}
                 </div>
             </div>
         </div>
