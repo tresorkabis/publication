@@ -165,9 +165,24 @@ class Filiere(models.Model):
     def __str__(self):
         return self.libelle
 
+class AnneeEtude(models.Model):
+    """Année d'étude dans le système LMD : L1, L2, L3"""
+    code = models.CharField(max_length=5, unique=True, verbose_name="Code")
+    libelle = models.CharField(max_length=100, verbose_name="Libellé")
+    ordre = models.PositiveIntegerField(default=1, verbose_name="Ordre d'affichage")
+
+    class Meta:
+        verbose_name = "Année d'étude"
+        verbose_name_plural = "Années d'étude"
+        ordering = ['ordre']
+
+    def __str__(self):
+        return self.libelle
+
 class Promotion(models.Model):
     filiere = models.ForeignKey(Filiere, on_delete=models.CASCADE)
-    libelle = models.CharField(max_length=100)   
+    libelle = models.CharField(max_length=100)
+    annee_etude = models.ForeignKey(AnneeEtude, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Année d'étude")
 
     def __str__(self):
         return f"{self.libelle}"
@@ -183,20 +198,6 @@ class Inscription(models.Model):
 
     def __str__(self):
         return f"{self.etudiant.user.first_name} {self.etudiant.user.last_name} - {self.promotion.libelle}"
-    
-class AnneeEtude(models.Model):
-    """Année d'étude dans le système LMD : L1, L2, L3"""
-    code = models.CharField(max_length=5, unique=True, verbose_name="Code")
-    libelle = models.CharField(max_length=100, verbose_name="Libellé")
-    ordre = models.PositiveIntegerField(default=1, verbose_name="Ordre d'affichage")
-
-    class Meta:
-        verbose_name = "Année d'étude"
-        verbose_name_plural = "Années d'étude"
-        ordering = ['ordre']
-
-    def __str__(self):
-        return self.libelle
 
 class Semestre(models.Model):
     libelle = models.CharField(max_length=50)
@@ -311,6 +312,9 @@ class ProposalCoursEnseignant(models.Model):
     message = models.TextField(blank=True, null=True)
     date_proposition = models.DateTimeField(auto_now_add=True)
     est_accepte = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('cours', 'enseignant')
 
     def __str__(self):
         return f"{self.cours.libelle} -> {self.enseignant.user.get_full_name()}"

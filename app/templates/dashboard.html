@@ -449,9 +449,11 @@
         <div class="chart-header">
             <div class="chart-title">
                 <i class="fas fa-graduation-cap"></i>
-                Mes notes
+                Mon tableau de bord
             </div>
         </div>
+        
+        <!-- Statistiques principales -->
         <div class="stats-container" style="margin-bottom: 1.5rem;">
             <div class="stat-card-2024">
                 <div class="stat-content">
@@ -467,42 +469,99 @@
             <div class="stat-card-2024">
                 <div class="stat-content">
                     <div class="stat-info">
-                        <h3>Évaluations enregistrées</h3>
-                        <div class="value">{{ student_cotations|length }}</div>
+                        <h3>Évaluations publiées</h3>
+                        <div class="value">{{ evaluations_publiees|default:0 }}</div>
                     </div>
                     <div class="stat-icon users">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Total évaluations</h3>
+                        <div class="value">{{ total_evaluations|default:0 }}</div>
+                    </div>
+                    <div class="stat-icon staff">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
                 </div>
             </div>
+            {% if moyenne_meilleur_cours %}
+            <div class="stat-card-2024">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <h3>Meilleure moyenne</h3>
+                        <div class="value" style="color: var(--success);">{{ moyenne_meilleur_cours }}</div>
+                    </div>
+                    <div class="stat-icon students">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
+
+        <!-- Tableau détaillé par cours -->
         <div class="table-responsive">
             <table class="modern-table-2024">
                 <thead>
                     <tr>
                         <th>Cours</th>
                         <th>Évaluation</th>
+                        <th>Type</th>
                         <th>Date</th>
+                        <th>Statut</th>
                         <th>Note</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for cotation in student_cotations %}
-                    <tr>
-                        <td>{{ cotation.evaluation.cours.libelle }}</td>
-                        <td>{{ cotation.evaluation.type_evaluation.libelle }}</td>
-                        <td>{{ cotation.evaluation.date|date:'d/m/Y' }}</td>
-                        <td>
-                            {% if cotation.note is not None %}
-                                <span class="badge-2024 badge-success-2024">{{ cotation.note }}</span>
-                            {% else %}
-                                <span class="badge-2024 badge-secondary-2024">En attente</span>
+                    {% for cours_data in cours_notes %}
+                        {% for note_data in cours_data.cotations %}
+                        <tr>
+                            {% if forloop.first %}
+                            <td rowspan="{{ cours_data.cotations|length }}" style="vertical-align: top; font-weight: 600;">
+                                {{ cours_data.cours.libelle }}
+                                <br><small class="text-muted">{{ cours_data.cours.code }}</small>
+                                {% if cours_data.moyenne %}
+                                <br><span class="badge-2024 badge-success-2024" style="margin-top: 0.25rem;">
+                                    Moy: {{ cours_data.moyenne }}/20
+                                </span>
+                                {% endif %}
+                            </td>
                             {% endif %}
-                        </td>
-                    </tr>
+                            <td>{{ note_data.type_evaluation }}</td>
+                            <td>
+                                <span class="badge-2024 {% if note_data.is_published %}badge-success-2024{% else %}badge-secondary-2024{% endif %}">
+                                    {{ note_data.type_evaluation }}
+                                </span>
+                            </td>
+                            <td>{{ note_data.date|date:'d/m/Y' }}</td>
+                            <td>
+                                {% if note_data.is_published %}
+                                    <span class="badge-2024 badge-success-2024">Publié</span>
+                                {% else %}
+                                    <span class="badge-2024 badge-secondary-2024">En attente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if note_data.cotation.note is not None %}
+                                    <strong class="{% if note_data.status == 'reussite' %}text-success{% else %}text-danger{% endif %}">
+                                        {{ note_data.cotation.note }}
+                                    </strong>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="empty-state">Aucune note disponible pour le moment.</td>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                            Aucune note disponible pour le moment.
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

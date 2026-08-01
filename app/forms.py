@@ -120,6 +120,23 @@ class PropositionCoursForm(forms.ModelForm):
         self.fields['enseignant'].label = 'Enseignant'
         self.fields['message'].label = 'Message'
 
+    def clean(self):
+        cleaned_data = super().clean()
+        cours = cleaned_data.get('cours')
+        enseignant = cleaned_data.get('enseignant')
+        
+        if cours and enseignant:
+            existing = ProposalCoursEnseignant.objects.filter(
+                cours=cours,
+                enseignant=enseignant
+            )
+            if existing.exists():
+                raise forms.ValidationError(
+                    "Une proposition existe déjà pour cet enseignant et ce cours. "
+                    "Veuillez choisir un autre enseignant ou un autre cours."
+                )
+        return cleaned_data
+
 
 class UserProfileForm(forms.ModelForm):
     class Meta:

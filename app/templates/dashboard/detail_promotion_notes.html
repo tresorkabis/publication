@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Notes - {{ promotion.libelle }} ({{ promotion.filiere.libelle }}){% endblock %}
 
@@ -30,6 +31,14 @@
             </h5>
         </div>
         <div class="card-body">
+            {% if evaluations_en_attente %}
+            <form method="post" action="{% url 'valider_toutes_evaluations_promotion' promotion.id %}" style="margin-bottom: 1rem;" onsubmit="return confirm('Êtes-vous sûr de vouloir valider TOUTES les évaluations de cette promotion ? Cette action est irréversible.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check-double"></i> Valider toutes les évaluations
+                </button>
+            </form>
+            {% endif %}
             {% if evaluations_en_attente %}
             <div class="table-responsive">
                 <table class="table table-sm">
@@ -76,25 +85,22 @@
         </div>
     </div>
 
-    <!-- Grille des notes -->
+    <!-- Grille des notes ensemble (tous cours des 2 semestres) -->
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
-            <h5 class="mb-0">
-                <i class="fas fa-table me-2"></i>Grille des notes (Délibération)
-            </h5>
-        </div>
         <div class="card-body p-0">
             <div class="table-responsive" style="overflow-x: auto;">
-                <table class="table table-bordered table-hover mb-0" style="min-width: 800px;">
+                <table class="table table-bordered table-hover mb-0">
                     <thead>
                         <tr>
                             <th class="text-center align-middle" style="width: 50px; background-color: #f0f4ff; position: sticky; left: 0; z-index: 2;">#</th>
                             <th class="align-middle" style="min-width: 250px; background-color: #f0f4ff; position: sticky; left: 50px; z-index: 2;">Étudiant</th>
-                            {% for cours in cours_list %}
-                            <th class="text-center align-middle" style="min-width: 120px; background-color: #f0f4ff;">
+                            {% for semestre, cours_semestre in cours_par_semestre.items %}
+                            {% for cours in cours_semestre %}
+                            <th class="text-center align-middle" style="min-width: 150px; background-color: #f0f4ff;">
                                 <div class="small fw-bold">{{ cours.libelle }}</div>
                                 <div class="small text-muted" style="font-size: 0.7rem;">{{ cours.code }}</div>
                             </th>
+                            {% endfor %}
                             {% endfor %}
                         </tr>
                     </thead>
@@ -106,8 +112,10 @@
                                 <div class="fw-bold">{{ ligne.etudiant.user.get_full_name }}</div>
                                 <div class="small text-muted">Mat: {{ ligne.etudiant.matricule|default:"N/A" }}</div>
                             </td>
-                            {% for moyenne in ligne.moyennes %}
+                            {% for semestre, cours_semestre in cours_par_semestre.items %}
+                            {% for cours in cours_semestre %}
                             <td class="text-center align-middle">
+                                {% with moyenne=ligne.moyennes|get_item:cours.id %}
                                 {% if moyenne is not None %}
                                     <span class="fw-bold {% if moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">
                                         {{ moyenne }}
@@ -115,10 +123,12 @@
                                 {% else %}
                                     <span class="text-muted small">-</span>
                                 {% endif %}
+                                {% endwith %}
                             </td>
                             {% endfor %}
+                            {% endfor %}
                         </tr>
-                    {% endfor %}
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

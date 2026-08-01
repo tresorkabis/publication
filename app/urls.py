@@ -39,6 +39,7 @@ urlpatterns = [
     path('president/validations-notes/', views.liste_evaluations_a_valider, name='liste_evaluations_a_valider'),
     path('president/validations-notes/promotion/<int:promotion_id>/', views.detail_promotion_notes, name='detail_promotion_notes'),
     path('president/validations-notes/<int:evaluation_id>/', views.valider_evaluation, name='valider_evaluation'),
+    path('president/validations-notes/promotion/<int:promotion_id>/valider-toutes/', views.valider_toutes_evaluations_promotion, name='valider_toutes_evaluations_promotion'),
     path('president/historique-validations/', views.historique_validations, name='historique_validations'),
 
     path('filieres/', views.FiliereListView.as_view(), name='filiere_list'),

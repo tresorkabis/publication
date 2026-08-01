@@ -1,9 +1,0 @@
-
-Nombre de filières: 5
-
-Liste des filières:
-  - Génie Logiciel (GL)
-  - Réseau et Technique de Maintenance (RTM)
-  - Secrétariat de Direction (SD)
-  - Sciences Commerciales (SC)
-  - Informatique (INFO)
