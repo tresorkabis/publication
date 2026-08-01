@@ -93,7 +93,15 @@
         <div class="card-body p-0">
             <div class="table-responsive" style="overflow-x: auto;">
                 <table class="table table-bordered table-hover mb-0">
-                    <thead>
+                    <thead class="table-light">
+                        <tr class="text-center align-middle">
+                            <th colspan="2" style="background-color: #f0f4ff; position: sticky; left: 0; z-index: 3;">Étudiants</th>
+                            {% for semestre, cours_semestre in cours_par_semestre.items %}
+                            <th colspan="{{ cours_semestre|length }}" class="border-start" style="background-color: #e0e7ff; color: #4338ca; font-weight: bold; border-bottom: 2px solid #c7d2fe;">
+                                {{ semestre }}
+                            </th>
+                            {% endfor %}
+                        </tr>
                         <tr>
                             <th class="text-center align-middle" style="width: 50px; background-color: #f0f4ff; position: sticky; left: 0; z-index: 2;">#</th>
                             <th class="align-middle" style="min-width: 250px; background-color: #f0f4ff; position: sticky; left: 50px; z-index: 2;">Étudiant</th>
